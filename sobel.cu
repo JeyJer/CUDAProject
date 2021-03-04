@@ -136,34 +136,43 @@ __global__ void grayscale_sobel_shared( unsigned char * rgb, unsigned char * s, 
 
 __global__ void flou( unsigned char * rgb, unsigned char * s, std::size_t cols, std::size_t rows)
 {
-    
+
   auto i = blockIdx.x * blockDim.x + threadIdx.x;
   auto j = blockIdx.y * blockDim.y + threadIdx.y;
 
-  if( i == 0 )
-    std::cout << "doing flou" << std::endl;
-
-  auto matrix[3][3] = {
+  int matrix[3][3] = {
     { 1, 1, 1 },
     { 1, 1, 1 },
     { 1, 1, 1 }
-  }
+  };
 
   if( i > 1 && i < cols && j > 1 && j < rows )
   {
-    auto h = matrix[0][0] * rgb[ (j-1)*cols + i - 1 ] + matrix[0][1] * rgb[ (j-1)*cols + i   ] + matrix[0][2] * rgb[ (j-1)*cols + i + 1 ]
-           + matrix[1][0] * rgb[ (j  )*cols + i - 1 ] + matrix[1][1] * rgb[ (j  )*cols + i   ] + matrix[1][2] * rgb[ (j  )*cols + i + 1 ]
-           + matrix[2][0] * rgb[ (j+1)*cols + i - 1 ] + matrix[2][1] * rgb[ (j+1)*cols + i   ] + matrix[2][2] * rgb[ (j+1)*cols + i + 1 ];
+    auto h = matrix[0][0] * rgb[ (j-1)*cols + 3 * i - 1 ] + matrix[0][1] * rgb[ (j-1)*cols + 3 * i   ] + matrix[0][2] * rgb[ (j-1)*cols + 3 * i + 1 ]
+           + matrix[1][0] * rgb[ ( j  )*cols + 3 * i - 1 ] + matrix[1][1] * rgb[ (j  )*cols + 3 * i   ] + matrix[1][2] * rgb[ (j  )*cols + 3 * i + 1 ]
+           + matrix[2][0] * rgb[ (j+1)*cols + 3 * i - 1 ] + matrix[2][1] * rgb[ (j+1)*cols + 3 * i   ] + matrix[2][2] * rgb[ (j+1)*cols + 3 * i + 1 ];
 
-    h = h % 255;
-    s[ j * cols + i ] = h;
+      auto h_g = matrix[0][0] * rgb[ (j-1)*cols + 3 * i ] + matrix[0][1] * rgb[ (j-1)*cols + 3 * i + 1   ] + matrix[0][2] * rgb[ (j-1)*cols + 3 * i + 2 ]
+               + matrix[1][0] * rgb[ ( j  )*cols + 3 * i ] + matrix[1][1] * rgb[ (j  )*cols + 3 * i + 1   ] + matrix[1][2] * rgb[ (j  )*cols + 3 * i + 2 ]
+               + matrix[2][0] * rgb[ (j+1)*cols + 3 * i ] + matrix[2][1] * rgb[ (j+1)*cols + 3 * i + 1  ] + matrix[2][2] * rgb[ (j+1)*cols + 3 * i + 2 ];
+
+      auto h_b = matrix[0][0] * rgb[ (j-1)*cols + 3 * i + 1 ] + matrix[0][1] * rgb[ (j-1)*cols + 3 * i + 2   ] + matrix[0][2] * rgb[ (j-1)*cols + 3 * i + 3 ]
+               + matrix[1][0] * rgb[ ( j  )*cols + 3 * i + 1 ] + matrix[1][1] * rgb[ (j  )*cols + 3 * i + 2  ] + matrix[1][2] * rgb[ (j  )*cols + 3 * i + 3 ]
+               + matrix[2][0] * rgb[ (j+1)*cols + 3 * i + 1 ] + matrix[2][1] * rgb[ (j+1)*cols + 3 * i + 2  ] + matrix[2][2] * rgb[ (j+1)*cols + 3 * i + 3 ];
+
+    s[ j * cols + 3 * i ] = h % 256;
+    s[ j * cols + 3 * i + 1] = h_g % 256;
+    s[ j * cols + 3 * i + 2] = h_b % 256;
   }
 }
 
 
 int main()
 {
-  cv::Mat m_in = cv::imread("in.jpg", cv::IMREAD_UNCHANGED );
+    auto img_out = "/mnt/data/tsky-19/eclipsec/CUDAProject/out-new.jpg";
+    auto img_in = "/mnt/data/tsky-19/eclipsec/CUDAProject/in.jpg";
+
+  cv::Mat m_in = cv::imread(img_in, cv::IMREAD_UNCHANGED );
 
   //auto rgb = m_in.data;
   auto rows = m_in.rows;
@@ -172,7 +181,7 @@ int main()
   //std::vector< unsigned char > g( rows * cols );
   // Allocation de l'image de sortie en RAM côté CPU.
   unsigned char * g = nullptr;
-  cudaMallocHost( &g, rows * cols );
+  cudaMallocHost( &g, 3 * rows * cols );
   cv::Mat m_out( rows, cols, CV_8UC1, g );
 
   // Copie de l'image en entrée dans une mémoire dite "pinned" de manière à accélérer les transferts.
@@ -188,8 +197,8 @@ int main()
   unsigned char * s_d;
 
   cudaMalloc( &rgb_d, 3 * rows * cols );
-  cudaMalloc( &g_d, rows * cols );
-  cudaMalloc( &s_d, rows * cols );
+  cudaMalloc( &g_d, 3 * rows * cols );
+  cudaMalloc( &s_d, 3 * rows * cols );
 
   cudaMemcpy( rgb_d, rgb, 3 * rows * cols, cudaMemcpyHostToDevice );
 
@@ -224,11 +233,11 @@ int main()
 
   // Version fusionnée.
   // mémoire shared paramètre --> block.x * block.y
-  flou<<< grid1, block >>>( rgb_d, s_d, cols, rows );
+  flou<<< grid0, block >>>( rgb_d, s_d, cols, rows );
 
   cudaEventRecord( stop );
   
-  cudaMemcpy( g, s_d, rows * cols, cudaMemcpyDeviceToHost );
+  cudaMemcpy( g, s_d, 3 * rows * cols, cudaMemcpyDeviceToHost );
 
   cudaEventSynchronize( stop );
   float duration;
@@ -238,7 +247,7 @@ int main()
   cudaEventDestroy(start);
   cudaEventDestroy(stop);
 
-  cv::imwrite( "out.jpg", m_out );
+  cv::imwrite( img_out, m_out );
 
   cudaFree( rgb_d);
   cudaFree( g_d);
