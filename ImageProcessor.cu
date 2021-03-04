@@ -77,31 +77,6 @@ int init_divider( std::string filter )
     }
 }
 
-unsigned char ** init_conv_matrix( std::string filter, unsigned char ** conv_matrix )
-{
-    if( filter.compare("edgedetection") )
-    {
-        return init_edge_detection_matrix( conv_matrix );
-    }
-    else if( filter.compare("sharpen") )
-    {
-        return init_sharpen_matrix( conv_matrix );
-    }
-    else if( filter.compare("boxblur") )
-    {
-        return init_box_blur_matrix( conv_matrix );
-    }
-    else if( filter.compare("gaussianblur") )
-    {
-        return init_gaussian_blur_matrix( conv_matrix );
-    }
-    else
-    {
-        std::cout << "The filter " << filtersEnabled->at(i) << " is unknowned." << std::endl;
-        return nullptr;
-    }
-}
-
 unsigned char ** init_edge_detection_matrix()
 {
     unsigned char ** conv_matrix = new unsigned char*[ 3 ];
@@ -178,13 +153,38 @@ unsigned char ** init_gaussian_blur_matrix()
     return conv_matrix;
 }
 
+unsigned char ** init_conv_matrix( std::string filter )
+{
+    if( filter.compare("edgedetection") )
+    {
+        return init_edge_detection_matrix();
+    }
+    else if( filter.compare("sharpen") )
+    {
+        return init_sharpen_matrix();
+    }
+    else if( filter.compare("boxblur") )
+    {
+        return init_box_blur_matrix();
+    }
+    else if( filter.compare("gaussianblur") )
+    {
+        return init_gaussian_blur_matrix();
+    }
+    else
+    {
+        std::cout << "The filter " << filtersEnabled->at(i) << " is unknowned." << std::endl;
+        return nullptr;
+    }
+}
+
 //---- POINTER MANIPULATION ----
 
 void invert_pointer( unsigned char * ptr1, unsigned char * ptr2 )
 {
-    unsigned char* invertion_ptr = rgb_d;
-    rgb_d = result_d;
-    result_d = invertion_ptr;
+    unsigned char* invertion_ptr = ptr1;
+    ptr1 = ptr2;
+    ptr2 = invertion_ptr;
 }
 
 void free_conv_matrix( unsigned char ** array )
@@ -211,7 +211,7 @@ void recordCudaChrono( cudaEvent_t * chrono )
     cudaEventRecord( *chrono );
 }
 
-float getCudaChronoTimeElapsed( cudaEvent_t * stop )
+float getCudaChronoTimeElapsed( cudaEvent_t * start, cudaEvent_t * stop )
 {
     float duration;
     cudaEventElapsedTime( &duration, *start, *stop );
