@@ -42,7 +42,6 @@ __global__ void sobel( unsigned char * g, unsigned char * s, std::size_t cols, s
   }
 }
 
-
 /**
  * Kernel pour obtenir les contours à partir de l'image en niveaux de gris, en utilisant la mémoire shared
  * pour limiter les accès à la mémoire globale.
@@ -102,9 +101,9 @@ __global__ void grayscale_sobel_shared( unsigned char * rgb, unsigned char * s, 
 
   if( i < cols && j < rows ) {
     sh[ lj * w + li ] = (
-			 307 * rgb[ 3 * ( j * cols + i ) ]
+			   307 * rgb[ 3 * ( j * cols + i )     ]
 			 + 604 * rgb[ 3 * ( j * cols + i ) + 1 ]
-			 + 113 * rgb[  3 * ( j * cols + i ) + 2 ]
+			 + 113 * rgb[ 3 * ( j * cols + i ) + 2 ]
 			 ) >> 10;
   }
 
@@ -128,6 +127,36 @@ __global__ void grayscale_sobel_shared( unsigned char * rgb, unsigned char * s, 
     res = res > 65535 ? res = 65535 : res;
 
     s[ j * cols + i ] = sqrtf( res );
+  }
+}
+
+//--------------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------------
+
+__global__ void flou( unsigned char * rgb, unsigned char * s, std::size_t cols, std::size_t rows)
+{
+    
+  auto i = blockIdx.x * blockDim.x + threadIdx.x;
+  auto j = blockIdx.y * blockDim.y + threadIdx.y;
+
+  if( i == 0 )
+    std::cout << "doing flou" << std::endl;
+
+  auto matrix[3][3] = {
+    { 1, 1, 1 },
+    { 1, 1, 1 },
+    { 1, 1, 1 }
+  }
+
+  if( i > 1 && i < cols && j > 1 && j < rows )
+  {
+    auto h = matrix[0][0] * rgb[ (j-1)*cols + i - 1 ] + matrix[0][1] * rgb[ (j-1)*cols + i   ] + matrix[0][2] * rgb[ (j-1)*cols + i + 1 ]
+           + matrix[1][0] * rgb[ (j  )*cols + i - 1 ] + matrix[1][1] * rgb[ (j  )*cols + i   ] + matrix[1][2] * rgb[ (j  )*cols + i + 1 ]
+           + matrix[2][0] * rgb[ (j+1)*cols + i - 1 ] + matrix[2][1] * rgb[ (j+1)*cols + i   ] + matrix[2][2] * rgb[ (j+1)*cols + i + 1 ];
+
+    h = h % 255;
+    s[ j * cols + i ] = h;
   }
 }
 
@@ -194,7 +223,8 @@ int main()
   */
 
   // Version fusionnée.
-  grayscale_sobel_shared<<< grid1, block, block.x * block.y >>>( rgb_d, s_d, cols, rows );
+  // mémoire shared paramètre --> block.x * block.y
+  flou<<< grid1, block >>>( rgb_d, s_d, cols, rows );
 
   cudaEventRecord( stop );
   
