@@ -5,16 +5,16 @@
 /**
  * Kernel pour transformer l'image RGB en niveaux de gris.
  */
-__global__ void grayscale(unsigned char* rgb, unsigned char* g, std::size_t cols, std::size_t rows) {
-    auto i = blockIdx.x * blockDim.x + threadIdx.x;
-    auto j = blockIdx.y * blockDim.y + threadIdx.y;
-    if (i < cols && j < rows) {
-        g[j * cols + i] = (
-            307 * rgb[3 * (j * cols + i)]
-            + 604 * rgb[3 * (j * cols + i) + 1]
-            + 113 * rgb[3 * (j * cols + i) + 2]
-            ) >> 10;
-    }
+__global__ void grayscale( unsigned char * rgb, unsigned char * g, std::size_t cols, std::size_t rows ) {
+  auto i = blockIdx.x * blockDim.x + threadIdx.x;
+  auto j = blockIdx.y * blockDim.y + threadIdx.y;
+  if( i < cols && j < rows ) {
+    g[ j * cols + i ] = (
+			 307 * rgb[ 3 * ( j * cols + i ) ]
+			 + 604 * rgb[ 3 * ( j * cols + i ) + 1 ]
+			 + 113 * rgb[  3 * ( j * cols + i ) + 2 ]
+			 ) >> 10;
+  }
 }
 
 /**
@@ -177,11 +177,67 @@ __global__ void flou(unsigned char* rgb, unsigned char* s, std::size_t cols, std
     }
 }
 
+__global__ void flou_shared(unsigned char* rgb, unsigned char* s, std::size_t cols, std::size_t rows)
+{
+    auto i_global = blockIdx.x * (blockDim.x - 2) + threadIdx.x;
+    auto j_global = blockIdx.y * (blockDim.y - 2) + threadIdx.y;
+
+    auto i = threadIdx.x;
+    auto j = threadIdx.y;
+
+    auto w = blockDim.x;
+    auto height = blockDim.y;
+
+    extern __shared__ unsigned char sh[];
+
+    if (i_global < cols && j_global < rows)
+    {
+        sh[j * w + i] = rgb[j_global * cols + i_global];
+    }
+
+    __syncthreads();
+
+    /*
+     * int matrix[3][3] = {
+      { 1, 2, 1 },
+      { 2, 4, 2 },
+      { 1, 2, 1 }
+    };
+     */
+
+    unsigned char matrix[3][3] = {
+            { 1, 1, 1 },
+            { 1, 1, 1 },
+            { 1, 1, 1 }
+    };
+    int diviseur = 9;
+
+    if (i_global < cols - 1 && j_global < rows - 1 && i > 0 && i < (w - 1) && j > 0 && j < (height - 1))
+    {
+        auto h = matrix[0][0] * sh[3 * ((j - 1) * cols + i - 1)] + matrix[0][1] * sh[3 * ((j - 1) * cols + i)] + matrix[0][2] * sh[3 * ((j - 1) * cols + i + 1)]
+                 + matrix[1][0] * sh[3 * ((j)*cols + i - 1)] + matrix[1][1] * sh[3 * ((j)*cols + i)] + matrix[1][2] * sh[3 * ((j)*cols + i + 1)]
+                 + matrix[2][0] * sh[3 * ((j + 1) * cols + i - 1)] + matrix[2][1] * sh[3 * ((j + 1) * cols + i)] + matrix[2][2] * sh[3 * ((j + 1) * cols + i + 1)];
+
+        auto h_g = matrix[0][0] * sh[3 * ((j - 1) * cols + i - 1) + 1] + matrix[0][1] * sh[3 * ((j - 1) * cols + i) + 1] + matrix[0][2] * sh[3 * ((j - 1) * cols + i + 1) + 1]
+                   + matrix[1][0] * sh[3 * ((j)*cols + i - 1) + 1] + matrix[1][1] * sh[3 * ((j)*cols + i) + 1] + matrix[1][2] * sh[3 * ((j)*cols + i + 1) + 1]
+                   + matrix[2][0] * sh[3 * ((j + 1) * cols + i - 1) + 1] + matrix[2][1] * sh[3 * ((j + 1) * cols + i) + 1] + matrix[2][2] * sh[3 * ((j + 1) * cols + i + 1) + 1];
+
+        auto h_b = matrix[0][0] * sh[3 * ((j - 1) * cols + i - 1) + 2] + matrix[0][1] * sh[3 * ((j - 1) * cols + i) + 2] + matrix[0][2] * sh[3 * ((j - 1) * cols + i + 1) + 2]
+                   + matrix[1][0] * sh[3 * ((j)*cols + i - 1) + 2] + matrix[1][1] * sh[3 * ((j)*cols + i) + 2] + matrix[1][2] * sh[3 * ((j)*cols + i + 1) + 2]
+                   + matrix[2][0] * sh[3 * ((j + 1) * cols + i - 1) + 2] + matrix[2][1] * sh[3 * ((j + 1) * cols + i) + 2] + matrix[2][2] * sh[3 * ((j + 1) * cols + i + 1) + 2];
+
+
+        s[3 * (j_global * cols + i_global)] = (h / diviseur);
+        s[3 * (j_global * cols + i_global) + 1] = (h_g / diviseur);
+        s[3 * (j_global * cols + i_global) + 2] = (h_b / diviseur);
+
+    }
+}
 
 int main()
 {
-    auto img_out = "out.jpg";
-    auto img_in = "in.jpg";
+    auto img_out = "/mnt/data/tsky-19/eclipsec/CUDAProject/out.jpg";
+    auto img_in = "/mnt/data/tsky-19/eclipsec/CUDAProject/in.jpg";
 
     cv::Mat m_in = cv::imread(img_in, cv::IMREAD_UNCHANGED);
 
@@ -244,24 +300,23 @@ int main()
 
     // Version fusionnée.
     // mémoire shared paramètre --> block.x * block.y
-    flou << < grid0, block >> > (rgb_d, s_d, cols, rows);
-    flou << < grid0, block >> > (s_d, rgb_d, cols, rows);
+    /**
+     * for( int i = 0; i < 8; i++){
+        flou <<< grid0, block >>> (rgb_d, s_d, cols, rows);
+        flou <<< grid0, block >>> (s_d, rgb_d, cols, rows);
 
-    flou << < grid0, block >> > (rgb_d, s_d, cols, rows);
-    flou << < grid0, block >> > (s_d, rgb_d, cols, rows);
+    }
+     flou <<< grid0, block >>> (rgb_d, s_d, cols, rows);
+     */
 
-    flou << < grid0, block >> > (rgb_d, s_d, cols, rows);
-    flou << < grid0, block >> > (s_d, rgb_d, cols, rows);
+    for( int i = 0; i < 1; i++){
+        flou_shared<<< grid1, block, block.x * block.y >>>( rgb_d, s_d, cols, rows );
+        flou_shared<<< grid1, block, block.x * block.y >>>( s_d, rgb_d, cols, rows );
+    }
+    flou_shared<<< grid1, block, block.x * block.y >>>( rgb_d, s_d, cols, rows );
 
-    flou << < grid0, block >> > (rgb_d, s_d, cols, rows);
-    flou << < grid0, block >> > (s_d, rgb_d, cols, rows);
 
-    flou << < grid0, block >> > (rgb_d, s_d, cols, rows);
-    flou << < grid0, block >> > (s_d, rgb_d, cols, rows);
 
-    flou << < grid0, block >> > (rgb_d, s_d, cols, rows);
-    flou << < grid0, block >> > (s_d, rgb_d, cols, rows);
-    
     cudaEventRecord(stop);
 
     cudaMemcpy(g, s_d, 3 * rows * cols, cudaMemcpyDeviceToHost);
