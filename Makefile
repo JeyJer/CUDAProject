@@ -2,14 +2,13 @@ CXX=g++
 CXXFLAGS=-O3 -march=native
 LDLIBS=`pkg-config --libs opencv`
 
-
-#grayscale: sobel.cpp
+#ImageProcessor-cpp: ImageProcessor.cpp
 #	$(CXX) $(CXXFLAGS) -o $@ $< $(LDLIBS)
 
-grayscale-cu: sobel.cu
+ImageProcessor-cu: ImageProcessor.cu
 	nvcc -o $@ $< $(LDLIBS)
 
 .PHONY: clean
 
 clean:
-	rm sobel
+	rm ImageProcessor-* out.jpg
