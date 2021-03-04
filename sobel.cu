@@ -140,11 +140,20 @@ __global__ void flou( unsigned char * rgb, unsigned char * s, std::size_t cols, 
   auto i = blockIdx.x * blockDim.x + threadIdx.x;
   auto j = blockIdx.y * blockDim.y + threadIdx.y;
 
-  int matrix[3][3] = {
-    { 1, 1, 1 },
-    { 1, 1, 1 },
-    { 1, 1, 1 }
+  /*
+   * int matrix[3][3] = {
+    { 1, 2, 1 },
+    { 2, 4, 2 },
+    { 1, 2, 1 }
   };
+   */
+
+    unsigned char matrix[3][3] = {
+            { 0, 0, 0 },
+            { 0, 1, 0 },
+            { 0, 0, 0 }
+    };
+    int diviseur = 1;
 
   if( i > 1 && i < cols && j > 1 && j < rows )
   {
@@ -160,17 +169,24 @@ __global__ void flou( unsigned char * rgb, unsigned char * s, std::size_t cols, 
                + matrix[1][0] * rgb[ ( j  )*cols + 3 * i + 1 ] + matrix[1][1] * rgb[ (j  )*cols + 3 * i + 2  ] + matrix[1][2] * rgb[ (j  )*cols + 3 * i + 3 ]
                + matrix[2][0] * rgb[ (j+1)*cols + 3 * i + 1 ] + matrix[2][1] * rgb[ (j+1)*cols + 3 * i + 2  ] + matrix[2][2] * rgb[ (j+1)*cols + 3 * i + 3 ];
 
-    s[ j * cols + 3 * i ] = (h / 9) ;
-    s[ j * cols + 3 * i + 1] = (h_g / 9) ;
-    s[ j * cols + 3 * i + 2] = (h_b / 9) ;
+      s[ j * cols + 3 * i ] = rgb[ j * cols + 3 * i] ;
+      s[ j * cols + 3 * i + 1 ] = rgb[ j * cols + 3 * i + 1] ;
+      s[ j * cols + 3 * i + 2 ] = rgb[ j * cols + 3 * i + 2] ;
+
+   /**
+    * s[ j * cols + 3 * i ] = (h / diviseur) ;
+    s[ j * cols + 3 * i + 1] = (h_g / diviseur) ;
+    s[ j * cols + 3 * i + 2] = (h_b / diviseur) ;
+    */
+
   }
 }
 
 
 int main()
 {
-    auto img_out = "/mnt/data/tsky-19/eclipsec/CUDAProject/out.jpg";
-    auto img_in = "/mnt/data/tsky-19/eclipsec/CUDAProject/in.jpg";
+    auto img_out = "/mnt/data/tsky-19/eclipsec/CUDAProject/out-new.jpg";
+    auto img_in = "/mnt/data/tsky-19/eclipsec/CUDAProject/in_test.jpg";
 
   cv::Mat m_in = cv::imread(img_in, cv::IMREAD_UNCHANGED );
 
