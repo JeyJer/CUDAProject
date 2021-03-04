@@ -173,7 +173,7 @@ unsigned char ** init_conv_matrix( std::string filter )
     }
     else
     {
-        std::cout << "The filter " << filtersEnabled->at(i) << " is unknowned." << std::endl;
+        std::cout << "The filter " << filter << " is unknowned." << std::endl;
         return nullptr;
     }
 }
@@ -351,6 +351,7 @@ int main( int argc , char **argv )
 
     //---- allocate and initialize image's pixel array (device-side)
     unsigned char* rgb_d;
+    unsigned char* result_d;
     cudaMalloc( &rgb_d, 3 * rows * cols );
     cudaMalloc( &result_d, 3 * rows * cols );
     cudaMemcpy( rgb_d, rgb, 3 * rows * cols, cudaMemcpyHostToDevice );
