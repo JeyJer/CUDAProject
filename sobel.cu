@@ -192,7 +192,9 @@ __global__ void flou_shared(unsigned char* rgb, unsigned char* s, std::size_t co
 
     if (i_global < cols && j_global < rows)
     {
-        sh[j * w + i] = rgb[j_global * cols + i_global];
+        sh[3 * (j * w + i)] = rgb[3 * (j_global * cols + i_global) ];
+        sh[3 * (j * w + i) + 1] = rgb[3 * (j_global * cols + i_global) + 1];
+        sh[3 * (j * w + i) + 2] = rgb[3* ( j_global * cols + i_global) + 2];
     }
 
     __syncthreads();
@@ -214,17 +216,17 @@ __global__ void flou_shared(unsigned char* rgb, unsigned char* s, std::size_t co
 
     if (i_global < cols - 1 && j_global < rows - 1 && i > 0 && i < (w - 1) && j > 0 && j < (height - 1))
     {
-        auto h = matrix[0][0] * sh[3 * ((j - 1) * cols + i - 1)] + matrix[0][1] * sh[3 * ((j - 1) * cols + i)] + matrix[0][2] * sh[3 * ((j - 1) * cols + i + 1)]
-                 + matrix[1][0] * sh[3 * ((j)*cols + i - 1)] + matrix[1][1] * sh[3 * ((j)*cols + i)] + matrix[1][2] * sh[3 * ((j)*cols + i + 1)]
-                 + matrix[2][0] * sh[3 * ((j + 1) * cols + i - 1)] + matrix[2][1] * sh[3 * ((j + 1) * cols + i)] + matrix[2][2] * sh[3 * ((j + 1) * cols + i + 1)];
+        auto h = matrix[0][0] * sh[3 * ((j - 1) * w + i - 1)] + matrix[0][1] * sh[3 * ((j - 1) * w + i)] + matrix[0][2] * sh[3 * ((j - 1) * w + i + 1)]
+                 + matrix[1][0] * sh[3 * ((j)*w + i - 1)] + matrix[1][1] * sh[3 * ((j)*w + i)] + matrix[1][2] * sh[3 * ((j)*w + i + 1)]
+                 + matrix[2][0] * sh[3 * ((j + 1) * w + i - 1)] + matrix[2][1] * sh[3 * ((j + 1) * w + i)] + matrix[2][2] * sh[3 * ((j + 1) * w + i + 1)];
 
-        auto h_g = matrix[0][0] * sh[3 * ((j - 1) * cols + i - 1) + 1] + matrix[0][1] * sh[3 * ((j - 1) * cols + i) + 1] + matrix[0][2] * sh[3 * ((j - 1) * cols + i + 1) + 1]
-                   + matrix[1][0] * sh[3 * ((j)*cols + i - 1) + 1] + matrix[1][1] * sh[3 * ((j)*cols + i) + 1] + matrix[1][2] * sh[3 * ((j)*cols + i + 1) + 1]
-                   + matrix[2][0] * sh[3 * ((j + 1) * cols + i - 1) + 1] + matrix[2][1] * sh[3 * ((j + 1) * cols + i) + 1] + matrix[2][2] * sh[3 * ((j + 1) * cols + i + 1) + 1];
+        auto h_g = matrix[0][0] * sh[3 * ((j - 1) * w + i - 1) + 1] + matrix[0][1] * sh[3 * ((j - 1) * w + i) + 1] + matrix[0][2] * sh[3 * ((j - 1) * w + i + 1) + 1]
+                   + matrix[1][0] * sh[3 * ((j)*w + i - 1) + 1] + matrix[1][1] * sh[3 * ((j)*w + i) + 1] + matrix[1][2] * sh[3 * ((j)*w + i + 1) + 1]
+                   + matrix[2][0] * sh[3 * ((j + 1) * w + i - 1) + 1] + matrix[2][1] * sh[3 * ((j + 1) * w + i) + 1] + matrix[2][2] * sh[3 * ((j + 1) * w + i + 1) + 1];
 
-        auto h_b = matrix[0][0] * sh[3 * ((j - 1) * cols + i - 1) + 2] + matrix[0][1] * sh[3 * ((j - 1) * cols + i) + 2] + matrix[0][2] * sh[3 * ((j - 1) * cols + i + 1) + 2]
-                   + matrix[1][0] * sh[3 * ((j)*cols + i - 1) + 2] + matrix[1][1] * sh[3 * ((j)*cols + i) + 2] + matrix[1][2] * sh[3 * ((j)*cols + i + 1) + 2]
-                   + matrix[2][0] * sh[3 * ((j + 1) * cols + i - 1) + 2] + matrix[2][1] * sh[3 * ((j + 1) * cols + i) + 2] + matrix[2][2] * sh[3 * ((j + 1) * cols + i + 1) + 2];
+        auto h_b = matrix[0][0] * sh[3 * ((j - 1) * w + i - 1) + 2] + matrix[0][1] * sh[3 * ((j - 1) * w + i) + 2] + matrix[0][2] * sh[3 * ((j - 1) * w + i + 1) + 2]
+                   + matrix[1][0] * sh[3 * ((j)*w + i - 1) + 2] + matrix[1][1] * sh[3 * ((j)*w + i) + 2] + matrix[1][2] * sh[3 * ((j)*w + i + 1) + 2]
+                   + matrix[2][0] * sh[3 * ((j + 1) * w + i - 1) + 2] + matrix[2][1] * sh[3 * ((j + 1) * w + i) + 2] + matrix[2][2] * sh[3 * ((j + 1) * w + i + 1) + 2];
 
 
         s[3 * (j_global * cols + i_global)] = (h / diviseur);
@@ -309,11 +311,8 @@ int main()
      flou <<< grid0, block >>> (rgb_d, s_d, cols, rows);
      */
 
-    for( int i = 0; i < 1; i++){
-        flou_shared<<< grid1, block, block.x * block.y >>>( rgb_d, s_d, cols, rows );
-        flou_shared<<< grid1, block, block.x * block.y >>>( s_d, rgb_d, cols, rows );
-    }
-    flou_shared<<< grid1, block, block.x * block.y >>>( rgb_d, s_d, cols, rows );
+
+    flou_shared<<< grid1, block, 3 * block.x * block.y >>>( rgb_d, s_d, cols, rows );
 
 
 
