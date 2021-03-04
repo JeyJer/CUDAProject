@@ -404,6 +404,7 @@ int main( int argc , char **argv )
             // invert rgb_d with result_d, for any other pass
             std::cout << "[" << filtersEnabled->at(i) << "] " << "Invert pointers" << std::endl;
             invert_pointer( rgb_d, result_d );
+            std::cout << "[" << filtersEnabled->at(i) << "] " << "Pointers inverted" << std::endl;
         }
         // cancel rgb_d and result_d invertion, because the passes ended
         std::cout << "[" << filtersEnabled->at(i) << "] " << " Reinvert pointers" << std::endl;
