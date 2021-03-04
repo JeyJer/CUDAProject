@@ -160,16 +160,16 @@ __global__ void flou( unsigned char * rgb, unsigned char * s, std::size_t cols, 
                + matrix[1][0] * rgb[ ( j  )*cols + 3 * i + 1 ] + matrix[1][1] * rgb[ (j  )*cols + 3 * i + 2  ] + matrix[1][2] * rgb[ (j  )*cols + 3 * i + 3 ]
                + matrix[2][0] * rgb[ (j+1)*cols + 3 * i + 1 ] + matrix[2][1] * rgb[ (j+1)*cols + 3 * i + 2  ] + matrix[2][2] * rgb[ (j+1)*cols + 3 * i + 3 ];
 
-    s[ j * cols + 3 * i ] = h % 256;
-    s[ j * cols + 3 * i + 1] = h_g % 256;
-    s[ j * cols + 3 * i + 2] = h_b % 256;
+    s[ j * cols + 3 * i ] = (h / 9) ;
+    s[ j * cols + 3 * i + 1] = (h_g / 9) ;
+    s[ j * cols + 3 * i + 2] = (h_b / 9) ;
   }
 }
 
 
 int main()
 {
-    auto img_out = "/mnt/data/tsky-19/eclipsec/CUDAProject/out-new.jpg";
+    auto img_out = "/mnt/data/tsky-19/eclipsec/CUDAProject/out.jpg";
     auto img_in = "/mnt/data/tsky-19/eclipsec/CUDAProject/in.jpg";
 
   cv::Mat m_in = cv::imread(img_in, cv::IMREAD_UNCHANGED );
