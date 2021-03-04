@@ -398,10 +398,10 @@ int main( int argc , char **argv )
             // invert rgb_d with result_d, for any other pass
             invert_pointer( rgb_d, result_d );
         }
-        // cancel rgb_d and result_d invertion, because the passes ended
-        invert_pointer( rgb_d, result_d );
         free_conv_matrix( conv_matrix );
     }
+    // cancel the rgb_d and result_d invertion, to put back the result in result_d
+    invert_pointer( rgb_d, result_d );
     //---- Allocate and fill memory (CPU-side) to store the device result
     unsigned char* img_out_h = nullptr;
     cudaMallocHost( &img_out_h, 3 * rows * cols );
@@ -409,6 +409,7 @@ int main( int argc , char **argv )
     cudaMemcpy( img_out_h, result_d, 3 * rows * cols, cudaMemcpyDeviceToHost );
 
     //---- Write img_out onto the disk
+    std::cout << "OUT PATH : " << cv::String(*img_out_path) << std::endl;
     cv::imwrite( cv::String(*img_out_path), img_out_matrix );
 
     //---- Free memory
