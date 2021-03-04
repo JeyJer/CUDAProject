@@ -2,50 +2,270 @@
 #include <vector>
 #include <cstring>
 
-__global__ void flou(unsigned char* rgb, unsigned char* s, std::size_t cols, std::size_t rows)
+//----------------
+//--- UTILITY ----
+//----------------
+
+//-- PARAMETERS --
+
+void printParameters( std::string txtBold, std::string txtNormal, bool isTxtBoldUnderlined )
+{
+    std::cout << "\033[1" << ((isTxtBoldUnderlined) ? ";4" : "") << "m" << txtBold << "\033[0m" << txtNormal << std::endl;
+}
+
+void initParameters( std::string * img_in_path, std::string * img_out_path, bool * useShared,
+    std::vector<std::string> * filtersEnabled, std::vector<int> * passNumber,
+    int argc , char **argv )
+{
+    std::cout << std::endl;
+
+    // Retrieve program parameters
+    *img_in_path = argv[1];
+    *img_out_path = argv[2];
+
+    // Save if the program will use shared memory.
+    *useShared = std::atoi( argv[3] );
+
+    for( int i = 4 ; i < argc ; i+=2 )
+    {
+        filtersEnabled->push_back( argv[i] );
+        passNumber->push_back( std::atoi(argv[i+1]) );
+    }
+
+    printParameters( "• Files path :", "", false );
+    printParameters( "In path :", " "+(*img_in_path), true );
+    printParameters( "Out path :", " "+(*img_out_path), true );
+    std::cout << std::endl;
+
+    printParameters( "• CUDA Options :", "", false );
+    printParameters( "Memory Shared enabled ?", ((*useShared) ? " Yes" : " No"), true );
+    std::cout << std::endl;
+
+    printParameters( "• Image filters :", "", false );
+    for( int i = 0 ; i < filtersEnabled->size() ; ++i )
+    {
+        printParameters( filtersEnabled->at(i) + " :", " "+std::to_string(passNumber->at(i)) + "-pass.", true );
+    }
+    std::cout << std::endl;
+}
+
+void presavedParameters( std::string* img_in_path, std::string* img_out_path, bool* useShared,
+    std::vector<std::string>* filtersEnabled, std::vector<int> * passNumber )
+{
+    *img_in_path = "./in.jpg";
+    *img_out_path = "./out.jpg";
+    *useShared = 0;
+    filtersEnabled->push_back( "BoxBlur" );
+    passNumber->push_back( 10 );
+}
+
+//---- FILTERS ---
+
+int init_divider( std::string filter )
+{
+    if( filter.compare("boxblur") )
+    {
+        return 9;
+    }
+    else if( filter.compare("gaussianblur") )
+    {
+        return 16;
+    }
+    else
+    {
+        return 1;
+    }
+}
+
+unsigned char ** init_conv_matrix( std::string filter, unsigned char ** conv_matrix )
+{
+    if( filter.compare("edgedetection") )
+    {
+        return init_edge_detection_matrix( conv_matrix );
+    }
+    else if( filter.compare("sharpen") )
+    {
+        return init_sharpen_matrix( conv_matrix );
+    }
+    else if( filter.compare("boxblur") )
+    {
+        return init_box_blur_matrix( conv_matrix );
+    }
+    else if( filter.compare("gaussianblur") )
+    {
+        return init_gaussian_blur_matrix( conv_matrix );
+    }
+    else
+    {
+        std::cout << "The filter " << filtersEnabled->at(i) << " is unknowned." << std::endl;
+        return nullptr;
+    }
+}
+
+unsigned char ** init_edge_detection_matrix()
+{
+    unsigned char ** conv_matrix = new unsigned char*[ 3 ];
+    for( int i = 0; i < 3; ++i )
+        conv_matrix[ i ]  = new unsigned char[ 3 ];
+
+    conv_matrix[0][0] = -1;
+    conv_matrix[0][1] = -1;
+    conv_matrix[0][2] = -1;
+    conv_matrix[1][0] = -1;
+    conv_matrix[1][1] = 8;
+    conv_matrix[1][2] = -1;
+    conv_matrix[2][0] = -1;
+    conv_matrix[2][1] = -1;
+    conv_matrix[2][2] = -1;
+
+    return conv_matrix;
+}
+
+unsigned char ** init_sharpen_matrix()
+{
+    unsigned char ** conv_matrix = new unsigned char*[ 3 ];
+    for( int i = 0; i < 3; ++i )
+        conv_matrix[ i ]  = new unsigned char[ 3 ];
+
+    conv_matrix[0][0] = 0;
+    conv_matrix[0][1] = -1;
+    conv_matrix[0][2] = 0;
+    conv_matrix[1][0] = -1;
+    conv_matrix[1][1] = 5;
+    conv_matrix[1][2] = -1;
+    conv_matrix[2][0] = 0;
+    conv_matrix[2][1] = -1;
+    conv_matrix[2][2] = 0;
+
+    return conv_matrix;
+}
+
+unsigned char ** init_box_blur_matrix()
+{
+    unsigned char ** conv_matrix = new unsigned char*[ 3 ];
+    for( int i = 0; i < 3; ++i )
+        conv_matrix[ i ]  = new unsigned char[ 3 ];
+
+    conv_matrix[0][0] = 1;
+    conv_matrix[0][1] = 1;
+    conv_matrix[0][2] = 1;
+    conv_matrix[1][0] = 1;
+    conv_matrix[1][1] = 1;
+    conv_matrix[1][2] = 1;
+    conv_matrix[2][0] = 1;
+    conv_matrix[2][1] = 1;
+    conv_matrix[2][2] = 1;
+
+    return conv_matrix;
+}
+
+unsigned char ** init_gaussian_blur_matrix()
+{
+    unsigned char ** conv_matrix = new unsigned char*[ 3 ];
+    for( int i = 0; i < 3; ++i )
+        conv_matrix[ i ]  = new unsigned char[ 3 ];
+
+    conv_matrix[0][0] = 1;
+    conv_matrix[0][1] = 2;
+    conv_matrix[0][2] = 1;
+    conv_matrix[1][0] = 2;
+    conv_matrix[1][1] = 4;
+    conv_matrix[1][2] = 2;
+    conv_matrix[2][0] = 1;
+    conv_matrix[2][1] = 2;
+    conv_matrix[2][2] = 1;
+
+    return conv_matrix;
+}
+
+//---- POINTER MANIPULATION ----
+
+void invert_pointer( unsigned char * ptr1, unsigned char * ptr2 )
+{
+    unsigned char* invertion_ptr = rgb_d;
+    rgb_d = result_d;
+    result_d = invertion_ptr;
+}
+
+void free_conv_matrix( unsigned char ** array )
+{
+    for( int i = 0 ; i < 3 ; i++ )
+        delete[] array[i];
+    delete[] array;
+}
+
+//----------------
+//----- CUDA -----
+//----------------
+
+//---- CHRONO ----
+
+void initCudaChrono( cudaEvent_t * start, cudaEvent_t * stop )
+{
+    cudaEventCreate( start );
+    cudaEventCreate( stop );
+}
+
+void recordCudaChrono( cudaEvent_t * chrono )
+{
+    cudaEventRecord( *chrono );
+}
+
+float getCudaChronoTimeElapsed( cudaEvent_t * stop )
+{
+    float duration;
+    cudaEventElapsedTime( &duration, *start, *stop );
+    return duration;
+}
+
+void destroyCudaChrono( cudaEvent_t * start, cudaEvent_t * stop )
+{
+    cudaEventDestroy( *start );
+    cudaEventDestroy( *stop );
+}
+
+//---- PROCESSING ----
+
+__global__ void image_processing(unsigned char* rgb, unsigned char* s, std::size_t cols, std::size_t rows, unsigned char ** matrix, int divider )
 {
 
     auto i = blockIdx.x * blockDim.x + threadIdx.x;
     auto j = blockIdx.y * blockDim.y + threadIdx.y;
 
     /*
-     * int matrix[3][3] = {
+    int matrix[3][3] = {
       { 1, 2, 1 },
       { 2, 4, 2 },
       { 1, 2, 1 }
     };
-     */
-
     unsigned char matrix[3][3] = {
             { 1, 1, 1 },
             { 1, 1, 1 },
             { 1, 1, 1 }
     };
-    int diviseur = 9;
+    */
 
     if (i > 0 && i < cols && j > 0 && j < rows)
     {
-        auto h = matrix[0][0] * rgb[3 * ((j - 1) * cols + i - 1)] + matrix[0][1] * rgb[3 * ((j - 1) * cols + i)] + matrix[0][2] * rgb[3 * ((j - 1) * cols + i + 1)]
-            + matrix[1][0] * rgb[3 * ((j)*cols + i - 1)] + matrix[1][1] * rgb[3 * ((j)*cols + i)] + matrix[1][2] * rgb[3 * ((j)*cols + i + 1)]
-            + matrix[2][0] * rgb[3 * ((j + 1) * cols + i - 1)] + matrix[2][1] * rgb[3 * ((j + 1) * cols + i)] + matrix[2][2] * rgb[3 * ((j + 1) * cols + i + 1)];
+        auto h_r = matrix[0][0] * rgb[3 * ((j - 1) * cols + i - 1)] + matrix[0][1] * rgb[3 * ((j - 1) * cols + i)] + matrix[0][2] * rgb[3 * ((j - 1) * cols + i + 1)]
+                 + matrix[1][0] * rgb[3 * ((j    ) * cols + i - 1)] + matrix[1][1] * rgb[3 * ((j    ) * cols + i)] + matrix[1][2] * rgb[3 * ((j    ) * cols + i + 1)]
+                 + matrix[2][0] * rgb[3 * ((j + 1) * cols + i - 1)] + matrix[2][1] * rgb[3 * ((j + 1) * cols + i)] + matrix[2][2] * rgb[3 * ((j + 1) * cols + i + 1)];
 
         auto h_g = matrix[0][0] * rgb[3 * ((j - 1) * cols + i - 1) + 1] + matrix[0][1] * rgb[3 * ((j - 1) * cols + i) + 1] + matrix[0][2] * rgb[3 * ((j - 1) * cols + i + 1) + 1]
-            + matrix[1][0] * rgb[3 * ((j)*cols + i - 1) + 1] + matrix[1][1] * rgb[3 * ((j)*cols + i) + 1] + matrix[1][2] * rgb[3 * ((j)*cols + i + 1) + 1]
-            + matrix[2][0] * rgb[3 * ((j + 1) * cols + i - 1) + 1] + matrix[2][1] * rgb[3 * ((j + 1) * cols + i) + 1] + matrix[2][2] * rgb[3 * ((j + 1) * cols + i + 1) + 1];
+                 + matrix[1][0] * rgb[3 * ((j    ) * cols + i - 1) + 1] + matrix[1][1] * rgb[3 * ((j    ) * cols + i) + 1] + matrix[1][2] * rgb[3 * ((j    ) * cols + i + 1) + 1]
+                 + matrix[2][0] * rgb[3 * ((j + 1) * cols + i - 1) + 1] + matrix[2][1] * rgb[3 * ((j + 1) * cols + i) + 1] + matrix[2][2] * rgb[3 * ((j + 1) * cols + i + 1) + 1];
 
         auto h_b = matrix[0][0] * rgb[3 * ((j - 1) * cols + i - 1) + 2] + matrix[0][1] * rgb[3 * ((j - 1) * cols + i) + 2] + matrix[0][2] * rgb[3 * ((j - 1) * cols + i + 1) + 2]
-            + matrix[1][0] * rgb[3 * ((j)*cols + i - 1) + 2] + matrix[1][1] * rgb[3 * ((j)*cols + i) + 2] + matrix[1][2] * rgb[3 * ((j)*cols + i + 1) + 2]
-            + matrix[2][0] * rgb[3 * ((j + 1) * cols + i - 1) + 2] + matrix[2][1] * rgb[3 * ((j + 1) * cols + i) + 2] + matrix[2][2] * rgb[3 * ((j + 1) * cols + i + 1) + 2];
+                 + matrix[1][0] * rgb[3 * ((j    ) * cols + i - 1) + 2] + matrix[1][1] * rgb[3 * ((j    ) * cols + i) + 2] + matrix[1][2] * rgb[3 * ((j    ) * cols + i + 1) + 2]
+                 + matrix[2][0] * rgb[3 * ((j + 1) * cols + i - 1) + 2] + matrix[2][1] * rgb[3 * ((j + 1) * cols + i) + 2] + matrix[2][2] * rgb[3 * ((j + 1) * cols + i + 1) + 2];
 
-
-        s[3 * (j * cols + i)] = (h / diviseur);
-        s[3 * (j * cols + i) + 1] = (h_g / diviseur);
-        s[3 * (j * cols + i) + 2] = (h_b / diviseur);
-
+        s[3 * (j * cols + i)    ] = (h_r / divider);
+        s[3 * (j * cols + i) + 1] = (h_g / divider);
+        s[3 * (j * cols + i) + 2] = (h_b / divider);
     }
 }
 
-__global__ void flou_shared(unsigned char* rgb, unsigned char* s, std::size_t cols, std::size_t rows)
+__global__ void image_processing_shared(unsigned char* rgb, unsigned char* s, std::size_t cols, std::size_t rows, unsigned char ** matrix, int divider)
 {
     auto i_global = blockIdx.x * (blockDim.x - 2) + threadIdx.x;
     auto j_global = blockIdx.y * (blockDim.y - 2) + threadIdx.y;
@@ -60,7 +280,7 @@ __global__ void flou_shared(unsigned char* rgb, unsigned char* s, std::size_t co
 
     if (i_global < cols && j_global < rows)
     {
-        sh[3 * (j * w + i)] = rgb[3 * (j_global * cols + i_global) ];
+        sh[3 * (j * w + i)    ] = rgb[3 * (j_global * cols + i_global)    ];
         sh[3 * (j * w + i) + 1] = rgb[3 * (j_global * cols + i_global) + 1];
         sh[3 * (j * w + i) + 2] = rgb[3* ( j_global * cols + i_global) + 2];
     }
@@ -73,137 +293,132 @@ __global__ void flou_shared(unsigned char* rgb, unsigned char* s, std::size_t co
       { 2, 4, 2 },
       { 1, 2, 1 }
     };
-     */
-
     unsigned char matrix[3][3] = {
             { 1, 1, 1 },
             { 1, 1, 1 },
             { 1, 1, 1 }
-    };
-    int diviseur = 9;
+    };*/
+
 
     if (i_global < cols - 1 && j_global < rows - 1 && i > 0 && i < (w - 1) && j > 0 && j < (height - 1))
     {
-        auto h = matrix[0][0] * sh[3 * ((j - 1) * w + i - 1)] + matrix[0][1] * sh[3 * ((j - 1) * w + i)] + matrix[0][2] * sh[3 * ((j - 1) * w + i + 1)]
-                 + matrix[1][0] * sh[3 * ((j)*w + i - 1)] + matrix[1][1] * sh[3 * ((j)*w + i)] + matrix[1][2] * sh[3 * ((j)*w + i + 1)]
+        auto h_r = matrix[0][0] * sh[3 * ((j - 1) * w + i - 1)] + matrix[0][1] * sh[3 * ((j - 1) * w + i)] + matrix[0][2] * sh[3 * ((j - 1) * w + i + 1)]
+                 + matrix[1][0] * sh[3 * ((j    ) * w + i - 1)] + matrix[1][1] * sh[3 * ((j    ) * w + i)] + matrix[1][2] * sh[3 * ((j    ) * w + i + 1)]
                  + matrix[2][0] * sh[3 * ((j + 1) * w + i - 1)] + matrix[2][1] * sh[3 * ((j + 1) * w + i)] + matrix[2][2] * sh[3 * ((j + 1) * w + i + 1)];
 
         auto h_g = matrix[0][0] * sh[3 * ((j - 1) * w + i - 1) + 1] + matrix[0][1] * sh[3 * ((j - 1) * w + i) + 1] + matrix[0][2] * sh[3 * ((j - 1) * w + i + 1) + 1]
-                   + matrix[1][0] * sh[3 * ((j)*w + i - 1) + 1] + matrix[1][1] * sh[3 * ((j)*w + i) + 1] + matrix[1][2] * sh[3 * ((j)*w + i + 1) + 1]
-                   + matrix[2][0] * sh[3 * ((j + 1) * w + i - 1) + 1] + matrix[2][1] * sh[3 * ((j + 1) * w + i) + 1] + matrix[2][2] * sh[3 * ((j + 1) * w + i + 1) + 1];
+                 + matrix[1][0] * sh[3 * ((j    ) * w + i - 1) + 1] + matrix[1][1] * sh[3 * ((j    ) * w + i) + 1] + matrix[1][2] * sh[3 * ((j    ) * w + i + 1) + 1]
+                 + matrix[2][0] * sh[3 * ((j + 1) * w + i - 1) + 1] + matrix[2][1] * sh[3 * ((j + 1) * w + i) + 1] + matrix[2][2] * sh[3 * ((j + 1) * w + i + 1) + 1];
 
         auto h_b = matrix[0][0] * sh[3 * ((j - 1) * w + i - 1) + 2] + matrix[0][1] * sh[3 * ((j - 1) * w + i) + 2] + matrix[0][2] * sh[3 * ((j - 1) * w + i + 1) + 2]
-                   + matrix[1][0] * sh[3 * ((j)*w + i - 1) + 2] + matrix[1][1] * sh[3 * ((j)*w + i) + 2] + matrix[1][2] * sh[3 * ((j)*w + i + 1) + 2]
-                   + matrix[2][0] * sh[3 * ((j + 1) * w + i - 1) + 2] + matrix[2][1] * sh[3 * ((j + 1) * w + i) + 2] + matrix[2][2] * sh[3 * ((j + 1) * w + i + 1) + 2];
+                 + matrix[1][0] * sh[3 * ((j    ) * w + i - 1) + 2] + matrix[1][1] * sh[3 * ((j    ) * w + i) + 2] + matrix[1][2] * sh[3 * ((j    ) * w + i + 1) + 2]
+                 + matrix[2][0] * sh[3 * ((j + 1) * w + i - 1) + 2] + matrix[2][1] * sh[3 * ((j + 1) * w + i) + 2] + matrix[2][2] * sh[3 * ((j + 1) * w + i + 1) + 2];
 
-
-        s[3 * (j_global * cols + i_global)] = (h / diviseur);
-        s[3 * (j_global * cols + i_global) + 1] = (h_g / diviseur);
-        s[3 * (j_global * cols + i_global) + 2] = (h_b / diviseur);
-
+        s[3 * (j_global * cols + i_global)    ] = (h_r / divider);
+        s[3 * (j_global * cols + i_global) + 1] = (h_g / divider);
+        s[3 * (j_global * cols + i_global) + 2] = (h_b / divider);
     }
 }
 
-int main()
+//----------------
+//----- MAIN -----
+//----------------
+
+int main( int argc , char **argv )
 {
-    auto img_out = "./out.jpg";
-    auto img_in = "./in.jpg";
+    //---- Declarate and allocate parameters
+    std::string *img_in_path = new std::string();
+    std::string *img_out_path = new std::string();
+    bool *useShared = new bool;
+    std::vector<std::string> *filtersEnabled = new std::vector<std::string>();
+    std::vector<int> *passNumber = new std::vector<int>();
 
-    cv::Mat m_in = cv::imread(img_in, cv::IMREAD_UNCHANGED);
+    //---- Initialize parameters
+    // RELEASE_MODE
+    initParameters( img_in_path, img_out_path, useShared, filtersEnabled, passNumber, argc, argv );
+    // DEBUG_MODE
+    // presavedParameters( img_in_path, img_out_path, useShared, filtersEnabled, passNumber );
 
-    //auto rgb = m_in.data;
-    auto rows = m_in.rows;
-    auto cols = m_in.cols;
+    //---- Retrieve image properties
+    cv::Mat img_in_matrix = cv::imread( *img_in_path, cv::IMREAD_UNCHANGED );
+    auto rows = img_in_matrix.rows;
+    auto cols = img_in_matrix.cols;
 
-    //std::vector< unsigned char > g( rows * cols );
-    // Allocation de l'image de sortie en RAM côté CPU.
-    unsigned char* g = nullptr;
-    cudaMallocHost(&g, 3 * rows * cols);
-    cv::Mat m_out(rows, cols, CV_8UC3, g);
-
-    // Copie de l'image en entrée dans une mémoire dite "pinned" de manière à accélérer les transferts.
-    // OpenCV alloue la mémoire en interne lors de la décompression de l'image donc soit sans doute avec
-    // un malloc standard.
+    //---- allocate and initialize image's pixel array (host-side)
     unsigned char* rgb = nullptr;
-    cudaMallocHost(&rgb, 3 * rows * cols);
+    cudaMallocHost( &rgb, 3 * rows * cols );
+    std::memcpy( rgb, img_in_matrix.data, 3 * rows * cols );
 
-    std::memcpy(rgb, m_in.data, 3 * rows * cols);
-
+    //---- allocate and initialize image's pixel array (device-side)
     unsigned char* rgb_d;
-    unsigned char* g_d;
-    unsigned char* s_d;
+    cudaMalloc( &rgb_d, 3 * rows * cols );
+    cudaMalloc( &result_d, 3 * rows * cols );
+    cudaMemcpy( rgb_d, rgb, 3 * rows * cols, cudaMemcpyHostToDevice );
 
-    cudaMalloc(&rgb_d, 3 * rows * cols);
-    cudaMalloc(&g_d, 3 * rows * cols);
-    cudaMalloc(&s_d, 3 * rows * cols);
+    //---- Threads distribution
+    // grid block
+    dim3 block( 32, 4 );
+    // grid for non-shared memory processing
+    dim3 grid0( (cols - 1) / block.x + 1, (rows - 1) / block.y + 1 );
+    // grid for shared memory processing
+    dim3 grid1( (cols - 1) / (block.x - 2) + 1, (rows - 1) / (block.y - 2) + 1 );
 
-    cudaMemcpy(rgb_d, rgb, 3 * rows * cols, cudaMemcpyHostToDevice);
-
-    dim3 block(32, 4);
-    dim3 grid0((cols - 1) / block.x + 1, (rows - 1) / block.y + 1);
-    /**
-     * Pour la version shared il faut faire superposer les blocs de 2 pixels
-     * pour ne pas avoir de bandes non calculées autour des blocs
-     * on crée donc plus de blocs.
-     */
-    dim3 grid1((cols - 1) / (block.x - 2) + 1, (rows - 1) / (block.y - 2) + 1);
-
+    //---- Init and start chrono
     cudaEvent_t start, stop;
+    initCudaChrono( &start, &stop );
 
-    cudaEventCreate(&start);
-    cudaEventCreate(&stop);
+    //---- Launch image processing loop
+    for( int i = 0 ; i < filtersEnabled->size() ; ++i )
+    {
+        // init the convolution matrix and the divider according to the filter
+        unsigned char ** conv_matrix = init_conv_matrix( filtersEnabled->at(i) );
+        if( conv_matrix == nullptr ) continue;
+        int divider = init_divider( filtersEnabled->at(i) );
 
-    // Mesure du temps de calcul du kernel uniquement.
-    cudaEventRecord(start);
+        // apply the filter how many passes wished
+        for( int i = 0 ; i < passNumber->at(i) ; ++i )
+        {
+            recordCudaChrono( &start );
+            if( !*useShared )
+            {
+                image_processing<<< grid0, block >>>( rgb_d, result_d, cols, rows, conv_matrix, divider );
 
-    /*
-    // Version en 2 étapes.
-    grayscale<<< grid0, block >>>( rgb_d, g_d, cols, rows );
-    sobel<<< grid0, block >>>( g_d, s_d, cols, rows );
-    */
+            }
+            else
+            {
+                image_processing_shared<<< grid1, block, 3 * block.x * block.y >>>( rgb_d, result_d, cols, rows, conv_matrix, divider );
+            }
+            //---- get chrono time elapsed
+            recordCudaChrono( &stop );
+            cudaEventSynchronize( &stop );
+            float duration = getCudaChronoTimeElapsed( &start, &stop );
+            // TODO Do something with duration
 
-    /*
-    // Version en 2 étapes, Sobel avec mémoire shared.
-    grayscale<<< grid0, block >>>( rgb_d, g_d, cols, rows );
-    sobel_shared<<< grid1, block, block.x * block.y >>>( g_d, s_d, cols, rows );
-    */
+            // invert rgb_d with result_d, for any other pass
+            invert_pointer( rgb_d, result_d );
+        }
+        // cancel rgb_d and result_d invertion, because the passes ended
+        invert_pointer( rgb_d, result_d );
 
-    // Version fusionnée.
-    // mémoire shared paramètre --> block.x * block.y
-    /**
-     * for( int i = 0; i < 8; i++){
-        flou <<< grid0, block >>> (rgb_d, s_d, cols, rows);
-        flou <<< grid0, block >>> (s_d, rgb_d, cols, rows);
-
+        free_conv_matrix( conv_matrix );
     }
-     flou <<< grid0, block >>> (rgb_d, s_d, cols, rows);
-     */
+    //---- Allocate and fill memory (CPU-side) to store the device result
+    unsigned char* img_out_h = nullptr;
+    cudaMallocHost( &img_out_h, 3 * rows * cols );
+    cv::Mat img_out_matrix( rows, cols, CV_8UC3, img_out_h );
+    cudaMemcpy( img_out_h, result_d, 3 * rows * cols, cudaMemcpyDeviceToHost );
 
+    //---- Write img_out onto the disk
+    cv::imwrite( img_out_path, img_out_matrix );
 
-    flou_shared<<< grid1, block, 3 * block.x * block.y >>>( rgb_d, s_d, cols, rows );
-
-
-
-    cudaEventRecord(stop);
-
-    cudaMemcpy(g, s_d, 3 * rows * cols, cudaMemcpyDeviceToHost);
-
-    cudaEventSynchronize(stop);
-    float duration;
-    cudaEventElapsedTime(&duration, start, stop);
-    std::cout << "time=" << duration << std::endl;
-
-    cudaEventDestroy(start);
-    cudaEventDestroy(stop);
-
-    cv::imwrite(img_out, m_out);
-
-    cudaFree(rgb_d);
-    cudaFree(g_d);
-    cudaFree(s_d);
-
-    cudaFreeHost(g);
-    cudaFreeHost(rgb);
+    //---- Free memory
+    // host-side
+    cudaFree( rgb_d );
+    cudaFree( result_d );
+    // device-side
+    cudaFreeHost( img_out_h );
+    cudaFreeHost( rgb );
+    destroyCudaChrono( &start, &stop );
 
     return 0;
 }
