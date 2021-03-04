@@ -77,11 +77,11 @@ int init_divider( std::string filter )
     }
 }
 
-unsigned char ** init_edge_detection_matrix()
+char ** init_edge_detection_matrix()
 {
-    unsigned char ** conv_matrix = new unsigned char*[ 3 ];
+    char ** conv_matrix = new char*[ 3 ];
     for( int i = 0; i < 3; ++i )
-        conv_matrix[ i ]  = new unsigned char[ 3 ];
+        conv_matrix[ i ]  = new char[ 3 ];
 
     conv_matrix[0][0] = -1;
     conv_matrix[0][1] = -1;
@@ -96,11 +96,11 @@ unsigned char ** init_edge_detection_matrix()
     return conv_matrix;
 }
 
-unsigned char ** init_sharpen_matrix()
+char ** init_sharpen_matrix()
 {
-    unsigned char ** conv_matrix = new unsigned char*[ 3 ];
+    char ** conv_matrix = new char*[ 3 ];
     for( int i = 0; i < 3; ++i )
-        conv_matrix[ i ]  = new unsigned char[ 3 ];
+        conv_matrix[ i ]  = new char[ 3 ];
 
     conv_matrix[0][0] = 0;
     conv_matrix[0][1] = -1;
@@ -115,11 +115,11 @@ unsigned char ** init_sharpen_matrix()
     return conv_matrix;
 }
 
-unsigned char ** init_box_blur_matrix()
+char ** init_box_blur_matrix()
 {
-    unsigned char ** conv_matrix = new unsigned char*[ 3 ];
+    char ** conv_matrix = new char*[ 3 ];
     for( int i = 0; i < 3; ++i )
-        conv_matrix[ i ]  = new unsigned char[ 3 ];
+        conv_matrix[ i ]  = new char[ 3 ];
 
     conv_matrix[0][0] = 1;
     conv_matrix[0][1] = 1;
@@ -134,11 +134,11 @@ unsigned char ** init_box_blur_matrix()
     return conv_matrix;
 }
 
-unsigned char ** init_gaussian_blur_matrix()
+char ** init_gaussian_blur_matrix()
 {
-    unsigned char ** conv_matrix = new unsigned char*[ 3 ];
+    char ** conv_matrix = new char*[ 3 ];
     for( int i = 0; i < 3; ++i )
-        conv_matrix[ i ]  = new unsigned char[ 3 ];
+        conv_matrix[ i ]  = new char[ 3 ];
 
     conv_matrix[0][0] = 1;
     conv_matrix[0][1] = 2;
@@ -153,7 +153,7 @@ unsigned char ** init_gaussian_blur_matrix()
     return conv_matrix;
 }
 
-unsigned char ** init_conv_matrix( std::string filter )
+char ** init_conv_matrix( std::string filter )
 {
     if( filter.compare("edgedetection") )
     {
@@ -187,7 +187,7 @@ void invert_pointer( unsigned char * ptr1, unsigned char * ptr2 )
     ptr2 = invertion_ptr;
 }
 
-void free_conv_matrix( unsigned char ** array )
+void free_conv_matrix( char ** array )
 {
     for( int i = 0 ; i < 3 ; i++ )
         delete[] array[i];
@@ -226,7 +226,7 @@ void destroyCudaChrono( cudaEvent_t * start, cudaEvent_t * stop )
 
 //---- PROCESSING ----
 
-__global__ void image_processing(unsigned char* rgb, unsigned char* s, std::size_t cols, std::size_t rows, unsigned char ** matrix, int divider )
+__global__ void image_processing(unsigned char* rgb, unsigned char* s, std::size_t cols, std::size_t rows, char ** matrix, int divider )
 {
 
     auto i = blockIdx.x * blockDim.x + threadIdx.x;
@@ -238,7 +238,7 @@ __global__ void image_processing(unsigned char* rgb, unsigned char* s, std::size
       { 2, 4, 2 },
       { 1, 2, 1 }
     };
-    unsigned char matrix[3][3] = {
+    char matrix[3][3] = {
             { 1, 1, 1 },
             { 1, 1, 1 },
             { 1, 1, 1 }
@@ -265,7 +265,7 @@ __global__ void image_processing(unsigned char* rgb, unsigned char* s, std::size
     }
 }
 
-__global__ void image_processing_shared(unsigned char* rgb, unsigned char* s, std::size_t cols, std::size_t rows, unsigned char ** matrix, int divider)
+__global__ void image_processing_shared(unsigned char* rgb, unsigned char* s, std::size_t cols, std::size_t rows, char ** matrix, int divider)
 {
     auto i_global = blockIdx.x * (blockDim.x - 2) + threadIdx.x;
     auto j_global = blockIdx.y * (blockDim.y - 2) + threadIdx.y;
@@ -293,7 +293,7 @@ __global__ void image_processing_shared(unsigned char* rgb, unsigned char* s, st
       { 2, 4, 2 },
       { 1, 2, 1 }
     };
-    unsigned char matrix[3][3] = {
+    char matrix[3][3] = {
             { 1, 1, 1 },
             { 1, 1, 1 },
             { 1, 1, 1 }
@@ -372,7 +372,7 @@ int main( int argc , char **argv )
     for( int i = 0 ; i < filtersEnabled->size() ; ++i )
     {
         // init the convolution matrix and the divider according to the filter
-        unsigned char ** conv_matrix = init_conv_matrix( filtersEnabled->at(i) );
+        char ** conv_matrix = init_conv_matrix( filtersEnabled->at(i) );
         if( conv_matrix == nullptr ) continue;
         int divider = init_divider( filtersEnabled->at(i) );
 
