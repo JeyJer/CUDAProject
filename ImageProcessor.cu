@@ -106,8 +106,8 @@ __global__ void flou_shared(unsigned char* rgb, unsigned char* s, std::size_t co
 
 int main()
 {
-    auto img_out = "/mnt/data/tsky-19/eclipsec/CUDAProject/out.jpg";
-    auto img_in = "/mnt/data/tsky-19/eclipsec/CUDAProject/in.jpg";
+    auto img_out = "./out.jpg";
+    auto img_in = "./in.jpg";
 
     cv::Mat m_in = cv::imread(img_in, cv::IMREAD_UNCHANGED);
 
