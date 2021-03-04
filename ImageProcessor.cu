@@ -368,6 +368,7 @@ int main( int argc , char **argv )
     cudaEvent_t start, stop;
     initCudaChrono( &start, &stop );
 
+    std::cout << "before img processing" << std::endl;
     //---- Launch image processing loop
     for( int i = 0 ; i < filtersEnabled->size() ; ++i )
     {
@@ -403,6 +404,7 @@ int main( int argc , char **argv )
 
         free_conv_matrix( conv_matrix );
     }
+    std::cout << "after img processing" << std::endl;
     //---- Allocate and fill memory (CPU-side) to store the device result
     unsigned char* img_out_h = nullptr;
     cudaMallocHost( &img_out_h, 3 * rows * cols );
