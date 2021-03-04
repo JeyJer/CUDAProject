@@ -5,267 +5,283 @@
 /**
  * Kernel pour transformer l'image RGB en niveaux de gris.
  */
-__global__ void grayscale( unsigned char * rgb, unsigned char * g, std::size_t cols, std::size_t rows ) {
-  auto i = blockIdx.x * blockDim.x + threadIdx.x;
-  auto j = blockIdx.y * blockDim.y + threadIdx.y;
-  if( i < cols && j < rows ) {
-    g[ j * cols + i ] = (
-			 307 * rgb[ 3 * ( j * cols + i ) ]
-			 + 604 * rgb[ 3 * ( j * cols + i ) + 1 ]
-			 + 113 * rgb[  3 * ( j * cols + i ) + 2 ]
-			 ) >> 10;
-  }
+__global__ void grayscale(unsigned char* rgb, unsigned char* g, std::size_t cols, std::size_t rows) {
+    auto i = blockIdx.x * blockDim.x + threadIdx.x;
+    auto j = blockIdx.y * blockDim.y + threadIdx.y;
+    if (i < cols && j < rows) {
+        g[j * cols + i] = (
+            307 * rgb[3 * (j * cols + i)]
+            + 604 * rgb[3 * (j * cols + i) + 1]
+            + 113 * rgb[3 * (j * cols + i) + 2]
+            ) >> 10;
+    }
 }
 
 /**
  * Kernel pour obtenir les contours à partir de l'image en niveaux de gris.
  */
-__global__ void sobel( unsigned char * g, unsigned char * s, std::size_t cols, std::size_t rows )
+__global__ void sobel(unsigned char* g, unsigned char* s, std::size_t cols, std::size_t rows)
 {
-  auto i = blockIdx.x * blockDim.x + threadIdx.x;
-  auto j = blockIdx.y * blockDim.y + threadIdx.y;
+    auto i = blockIdx.x * blockDim.x + threadIdx.x;
+    auto j = blockIdx.y * blockDim.y + threadIdx.y;
 
-  if( i > 1 && i < cols && j > 1 && j < rows )
-  {
-    auto h =     g[ (j-1)*cols + i - 1 ] -     g[ (j-1)*cols + i + 1 ]
-           + 2 * g[ (j  )*cols + i - 1 ] - 2 * g[ (j  )*cols + i + 1 ]
-           +     g[ (j+1)*cols + i - 1 ] -     g[ (j+1)*cols + i + 1 ];
+    if (i > 1 && i < cols && j > 1 && j < rows)
+    {
+        auto h = g[(j - 1) * cols + i - 1] - g[(j - 1) * cols + i + 1]
+            + 2 * g[(j)*cols + i - 1] - 2 * g[(j)*cols + i + 1]
+            + g[(j + 1) * cols + i - 1] - g[(j + 1) * cols + i + 1];
 
-    auto v =     g[ (j-1)*cols + i - 1 ] -     g[ (j+1)*cols + i - 1 ]
-           + 2 * g[ (j-1)*cols + i     ] - 2 * g[ (j+1)*cols + i     ]
-           +     g[ (j-1)*cols + i + 1 ] -     g[ (j+1)*cols + i + 1 ];
+        auto v = g[(j - 1) * cols + i - 1] - g[(j + 1) * cols + i - 1]
+            + 2 * g[(j - 1) * cols + i] - 2 * g[(j + 1) * cols + i]
+            + g[(j - 1) * cols + i + 1] - g[(j + 1) * cols + i + 1];
 
-    auto res = h*h + v*v;
-    res = res > 65535 ? res = 65535 : res;
+        auto res = h * h + v * v;
+        res = res > 65535 ? res = 65535 : res;
 
-    s[ j * cols + i ] = sqrtf( res );
-  }
+        s[j * cols + i] = sqrtf(res);
+    }
 }
 
 /**
  * Kernel pour obtenir les contours à partir de l'image en niveaux de gris, en utilisant la mémoire shared
  * pour limiter les accès à la mémoire globale.
  */
-__global__ void sobel_shared( unsigned char * g, unsigned char * s, std::size_t cols, std::size_t rows )
+__global__ void sobel_shared(unsigned char* g, unsigned char* s, std::size_t cols, std::size_t rows)
 {
-  auto li = threadIdx.x;
-  auto lj = threadIdx.y;
+    auto li = threadIdx.x;
+    auto lj = threadIdx.y;
 
-  auto w = blockDim.x;
-  auto h = blockDim.y;
+    auto w = blockDim.x;
+    auto h = blockDim.y;
 
-  auto i = blockIdx.x * (blockDim.x-2) + threadIdx.x;
-  auto j = blockIdx.y * (blockDim.y-2) + threadIdx.y;
+    auto i = blockIdx.x * (blockDim.x - 2) + threadIdx.x;
+    auto j = blockIdx.y * (blockDim.y - 2) + threadIdx.y;
 
-  extern __shared__ unsigned char sh[];
+    extern __shared__ unsigned char sh[];
 
-  if( i < cols && j < rows )
-  {
-    sh[ lj * w + li ] = g[ j * cols + i ];
-  }
+    if (i < cols && j < rows)
+    {
+        sh[lj * w + li] = g[j * cols + i];
+    }
 
-  __syncthreads();
+    __syncthreads();
 
-  if( i < cols -1 && j < rows-1 && li > 0 && li < (w-1) && lj > 0 && lj < (h-1) )
-  {
-    auto h =     sh[ (lj-1)*w + li - 1 ] -     sh[ (lj-1)*w + li + 1 ]
-           + 2 * sh[ (lj  )*w + li - 1 ] - 2 * sh[ (lj  )*w + li + 1 ]
-           +     sh[ (lj+1)*w + li - 1 ] -     sh[ (lj+1)*w + li + 1 ];
+    if (i < cols - 1 && j < rows - 1 && li > 0 && li < (w - 1) && lj > 0 && lj < (h - 1))
+    {
+        auto h = sh[(lj - 1) * w + li - 1] - sh[(lj - 1) * w + li + 1]
+            + 2 * sh[(lj)*w + li - 1] - 2 * sh[(lj)*w + li + 1]
+            + sh[(lj + 1) * w + li - 1] - sh[(lj + 1) * w + li + 1];
 
-    auto v =     sh[ (lj-1)*w + li - 1 ] -     sh[ (lj+1)*w + li - 1 ]
-           + 2 * sh[ (lj-1)*w + li     ] - 2 * sh[ (lj+1)*w + li     ]
-           +     sh[ (lj-1)*w + li + 1 ] -     sh[ (lj+1)*w + li + 1 ];
+        auto v = sh[(lj - 1) * w + li - 1] - sh[(lj + 1) * w + li - 1]
+            + 2 * sh[(lj - 1) * w + li] - 2 * sh[(lj + 1) * w + li]
+            + sh[(lj - 1) * w + li + 1] - sh[(lj + 1) * w + li + 1];
 
-    auto res = h*h + v*v;
-    res = res > 65535 ? res = 65535 : res;
+        auto res = h * h + v * v;
+        res = res > 65535 ? res = 65535 : res;
 
-    s[ j * cols + i ] = sqrtf( res );
-  }
+        s[j * cols + i] = sqrtf(res);
+    }
 }
 
 
 /**
  * Kernel fusionnant le passage en niveaux de gris et la détection de contours.
  */
-__global__ void grayscale_sobel_shared( unsigned char * rgb, unsigned char * s, std::size_t cols, std::size_t rows ) {
-  auto i = blockIdx.x * (blockDim.x-2) + threadIdx.x;
-  auto j = blockIdx.y * (blockDim.y-2) + threadIdx.y;
+__global__ void grayscale_sobel_shared(unsigned char* rgb, unsigned char* s, std::size_t cols, std::size_t rows) {
+    auto i = blockIdx.x * (blockDim.x - 2) + threadIdx.x;
+    auto j = blockIdx.y * (blockDim.y - 2) + threadIdx.y;
 
-  auto li = threadIdx.x;
-  auto lj = threadIdx.y;
+    auto li = threadIdx.x;
+    auto lj = threadIdx.y;
 
-  auto w = blockDim.x;
-  auto h = blockDim.y;
+    auto w = blockDim.x;
+    auto h = blockDim.y;
 
-  extern __shared__ unsigned char sh[];
+    extern __shared__ unsigned char sh[];
 
-  if( i < cols && j < rows ) {
-    sh[ lj * w + li ] = (
-			   307 * rgb[ 3 * ( j * cols + i )     ]
-			 + 604 * rgb[ 3 * ( j * cols + i ) + 1 ]
-			 + 113 * rgb[ 3 * ( j * cols + i ) + 2 ]
-			 ) >> 10;
-  }
+    if (i < cols && j < rows) {
+        sh[lj * w + li] = (
+            307 * rgb[3 * (j * cols + i)]
+            + 604 * rgb[3 * (j * cols + i) + 1]
+            + 113 * rgb[3 * (j * cols + i) + 2]
+            ) >> 10;
+    }
 
-  /**
-   * Il faut synchroniser tous les warps (threads) du bloc pour être certain que le niveau de gris est calculé
-   * par tous les threads du bloc avant de pouvoir accéder aux données des pixels voisins.
-   */
-  __syncthreads();
- 
-  if( i < cols -1 && j < rows-1 && li > 0 && li < (w-1) && lj > 0 && lj < (h-1) )
-  {
-    auto hr =     sh[ (lj-1)*w + li - 1 ] -     sh[ (lj-1)*w + li + 1 ]
-           + 2 * sh[ (lj  )*w + li - 1 ] - 2 * sh[ (lj  )*w + li + 1 ]
-           +     sh[ (lj+1)*w + li - 1 ] -     sh[ (lj+1)*w + li + 1 ];
+    /**
+     * Il faut synchroniser tous les warps (threads) du bloc pour être certain que le niveau de gris est calculé
+     * par tous les threads du bloc avant de pouvoir accéder aux données des pixels voisins.
+     */
+    __syncthreads();
 
-    auto vr =     sh[ (lj-1)*w + li - 1 ] -     sh[ (lj+1)*w + li - 1 ]
-           + 2 * sh[ (lj-1)*w + li     ] - 2 * sh[ (lj+1)*w + li     ]
-           +     sh[ (lj-1)*w + li + 1 ] -     sh[ (lj+1)*w + li + 1 ];
+    if (i < cols - 1 && j < rows - 1 && li > 0 && li < (w - 1) && lj > 0 && lj < (h - 1))
+    {
+        auto hr = sh[(lj - 1) * w + li - 1] - sh[(lj - 1) * w + li + 1]
+            + 2 * sh[(lj)*w + li - 1] - 2 * sh[(lj)*w + li + 1]
+            + sh[(lj + 1) * w + li - 1] - sh[(lj + 1) * w + li + 1];
 
-    auto res = hr*hr + vr*vr;
-    res = res > 65535 ? res = 65535 : res;
+        auto vr = sh[(lj - 1) * w + li - 1] - sh[(lj + 1) * w + li - 1]
+            + 2 * sh[(lj - 1) * w + li] - 2 * sh[(lj + 1) * w + li]
+            + sh[(lj - 1) * w + li + 1] - sh[(lj + 1) * w + li + 1];
 
-    s[ j * cols + i ] = sqrtf( res );
-  }
+        auto res = hr * hr + vr * vr;
+        res = res > 65535 ? res = 65535 : res;
+
+        s[j * cols + i] = sqrtf(res);
+    }
 }
 
 //--------------------------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------------------
 
-__global__ void flou( unsigned char * rgb, unsigned char * s, std::size_t cols, std::size_t rows)
+__global__ void flou(unsigned char* rgb, unsigned char* s, std::size_t cols, std::size_t rows)
 {
 
-  auto i = blockIdx.x * blockDim.x + threadIdx.x;
-  auto j = blockIdx.y * blockDim.y + threadIdx.y;
+    auto i = blockIdx.x * blockDim.x + threadIdx.x;
+    auto j = blockIdx.y * blockDim.y + threadIdx.y;
 
-  /*
-   * int matrix[3][3] = {
-    { 1, 2, 1 },
-    { 2, 4, 2 },
-    { 1, 2, 1 }
-  };
-   */
+    /*
+     * int matrix[3][3] = {
+      { 1, 2, 1 },
+      { 2, 4, 2 },
+      { 1, 2, 1 }
+    };
+     */
 
     unsigned char matrix[3][3] = {
-            { 0, 0, 0 },
-            { 0, 1, 0 },
-            { 0, 0, 0 }
+            { 1, 1, 1 },
+            { 1, 1, 1 },
+            { 1, 1, 1 }
     };
-    int diviseur = 1;
+    int diviseur = 9;
 
-  if( i > 0 && i < cols && j > 0 && j < rows )
-  {
-    auto h = matrix[0][0] * rgb[ 3 * ((j-1)*cols + i - 1) ] + matrix[0][1] * rgb[ 3 * ((j-1)*cols + i )   ] + matrix[0][2] * rgb[ 3 * ((j-1)*cols + i + 1) ]
-           + matrix[1][0] * rgb[ 3 * (( j  )*cols + i - 1) ] + matrix[1][1] * rgb[ 3 * ((j  )*cols + i)   ] + matrix[1][2] * rgb[ 3 * ((j  )*cols + i + 1) ]
-           + matrix[2][0] * rgb[ 3 * ((j+1)*cols + i - 1) ] + matrix[2][1] * rgb[ 3 * ((j+1)*cols + i)   ] + matrix[2][2] * rgb[ 3 * ((j+1)*cols + i + 1) ];
+    if (i > 0 && i < cols && j > 0 && j < rows)
+    {
+        auto h = matrix[0][0] * rgb[3 * ((j - 1) * cols + i - 1)] + matrix[0][1] * rgb[3 * ((j - 1) * cols + i)] + matrix[0][2] * rgb[3 * ((j - 1) * cols + i + 1)]
+            + matrix[1][0] * rgb[3 * ((j)*cols + i - 1)] + matrix[1][1] * rgb[3 * ((j)*cols + i)] + matrix[1][2] * rgb[3 * ((j)*cols + i + 1)]
+            + matrix[2][0] * rgb[3 * ((j + 1) * cols + i - 1)] + matrix[2][1] * rgb[3 * ((j + 1) * cols + i)] + matrix[2][2] * rgb[3 * ((j + 1) * cols + i + 1)];
 
-      auto h_g = matrix[0][0] * rgb[ 3 * ((j-1)*cols + i - 1) + 1 ] + matrix[0][1] * rgb[ 3 * ((j-1)*cols + i ) + 1  ] + matrix[0][2] * rgb[ 3 * ((j-1)*cols + i + 1) + 1 ]
-                 + matrix[1][0] * rgb[ 3 * (( j  )*cols + i - 1)  + 1  ] + matrix[1][1] * rgb[ 3 * ((j  )*cols + i)  + 1   ] + matrix[1][2] * rgb[ 3 * ((j  )*cols + i + 1)  + 1 ]
-                 + matrix[2][0] * rgb[ 3 * ((j+1)*cols + i - 1)  + 1 ] + matrix[2][1] * rgb[ 3 * ((j+1)*cols + i)  + 1  ] + matrix[2][2] * rgb[ 3 * ((j+1)*cols + i + 1)  + 1 ];
+        auto h_g = matrix[0][0] * rgb[3 * ((j - 1) * cols + i - 1) + 1] + matrix[0][1] * rgb[3 * ((j - 1) * cols + i) + 1] + matrix[0][2] * rgb[3 * ((j - 1) * cols + i + 1) + 1]
+            + matrix[1][0] * rgb[3 * ((j)*cols + i - 1) + 1] + matrix[1][1] * rgb[3 * ((j)*cols + i) + 1] + matrix[1][2] * rgb[3 * ((j)*cols + i + 1) + 1]
+            + matrix[2][0] * rgb[3 * ((j + 1) * cols + i - 1) + 1] + matrix[2][1] * rgb[3 * ((j + 1) * cols + i) + 1] + matrix[2][2] * rgb[3 * ((j + 1) * cols + i + 1) + 1];
 
-      auto h_b = matrix[0][0] * rgb[ 3 * ((j-1)*cols + i - 1) + 2 ] + matrix[0][1] * rgb[ 3 * ((j-1)*cols + i ) + 2   ] + matrix[0][2] * rgb[ 3 * ((j-1)*cols + i + 1) + 2 ]
-                 + matrix[1][0] * rgb[ 3 * (( j  )*cols + i - 1) + 2 ] + matrix[1][1] * rgb[ 3 * ((j  )*cols + i) + 2  ] + matrix[1][2] * rgb[ 3 * ((j  )*cols + i + 1) + 2 ]
-                 + matrix[2][0] * rgb[ 3 * ((j+1)*cols + i - 1) + 2] + matrix[2][1] * rgb[ 3 * ((j+1)*cols + i) + 2  ] + matrix[2][2] * rgb[ 3 * ((j+1)*cols + i + 1) + 2 ];
+        auto h_b = matrix[0][0] * rgb[3 * ((j - 1) * cols + i - 1) + 2] + matrix[0][1] * rgb[3 * ((j - 1) * cols + i) + 2] + matrix[0][2] * rgb[3 * ((j - 1) * cols + i + 1) + 2]
+            + matrix[1][0] * rgb[3 * ((j)*cols + i - 1) + 2] + matrix[1][1] * rgb[3 * ((j)*cols + i) + 2] + matrix[1][2] * rgb[3 * ((j)*cols + i + 1) + 2]
+            + matrix[2][0] * rgb[3 * ((j + 1) * cols + i - 1) + 2] + matrix[2][1] * rgb[3 * ((j + 1) * cols + i) + 2] + matrix[2][2] * rgb[3 * ((j + 1) * cols + i + 1) + 2];
 
 
-    s[ 3 * (j * cols  + i) ] = (h / diviseur) ;
-    s[ 3 * (j * cols + i ) + 1] = (h_g / diviseur) ;
-    s[ 3 * (j * cols + i) + 2] = (h_b / diviseur) ;
+        s[3 * (j * cols + i)] = (h / diviseur);
+        s[3 * (j * cols + i) + 1] = (h_g / diviseur);
+        s[3 * (j * cols + i) + 2] = (h_b / diviseur);
 
-  }
+    }
 }
 
 
 int main()
 {
-    auto img_out = "/mnt/data/tsky-19/eclipsec/CUDAProject/out-new.jpg";
-    auto img_in = "/mnt/data/tsky-19/eclipsec/CUDAProject/in_test.jpg";
+    auto img_out = "out.jpg";
+    auto img_in = "in.jpg";
 
-  cv::Mat m_in = cv::imread(img_in, cv::IMREAD_UNCHANGED );
+    cv::Mat m_in = cv::imread(img_in, cv::IMREAD_UNCHANGED);
 
-  //auto rgb = m_in.data;
-  auto rows = m_in.rows;
-  auto cols = m_in.cols;
+    //auto rgb = m_in.data;
+    auto rows = m_in.rows;
+    auto cols = m_in.cols;
 
-  //std::vector< unsigned char > g( rows * cols );
-  // Allocation de l'image de sortie en RAM côté CPU.
-  unsigned char * g = nullptr;
-  cudaMallocHost( &g, 3 * rows * cols );
-  cv::Mat m_out( rows, cols, CV_8UC3, g );
+    //std::vector< unsigned char > g( rows * cols );
+    // Allocation de l'image de sortie en RAM côté CPU.
+    unsigned char* g = nullptr;
+    cudaMallocHost(&g, 3 * rows * cols);
+    cv::Mat m_out(rows, cols, CV_8UC3, g);
 
-  // Copie de l'image en entrée dans une mémoire dite "pinned" de manière à accélérer les transferts.
-  // OpenCV alloue la mémoire en interne lors de la décompression de l'image donc soit sans doute avec
-  // un malloc standard.
-  unsigned char * rgb = nullptr;
-  cudaMallocHost( &rgb, 3 * rows * cols );
-  
-  std::memcpy( rgb, m_in.data, 3 * rows * cols );
+    // Copie de l'image en entrée dans une mémoire dite "pinned" de manière à accélérer les transferts.
+    // OpenCV alloue la mémoire en interne lors de la décompression de l'image donc soit sans doute avec
+    // un malloc standard.
+    unsigned char* rgb = nullptr;
+    cudaMallocHost(&rgb, 3 * rows * cols);
 
-  unsigned char * rgb_d;
-  unsigned char * g_d;
-  unsigned char * s_d;
+    std::memcpy(rgb, m_in.data, 3 * rows * cols);
 
-  cudaMalloc( &rgb_d, 3 * rows * cols );
-  cudaMalloc( &g_d, 3 * rows * cols );
-  cudaMalloc( &s_d, 3 * rows * cols );
+    unsigned char* rgb_d;
+    unsigned char* g_d;
+    unsigned char* s_d;
 
-  cudaMemcpy( rgb_d, rgb, 3 * rows * cols, cudaMemcpyHostToDevice );
+    cudaMalloc(&rgb_d, 3 * rows * cols);
+    cudaMalloc(&g_d, 3 * rows * cols);
+    cudaMalloc(&s_d, 3 * rows * cols);
 
-  dim3 block( 32, 4 );
-  dim3 grid0( ( cols - 1) / block.x + 1 , ( rows - 1 ) / block.y + 1 );
-  /**
-   * Pour la version shared il faut faire superposer les blocs de 2 pixels
-   * pour ne pas avoir de bandes non calculées autour des blocs
-   * on crée donc plus de blocs.
-   */
-  dim3 grid1( ( cols - 1) / (block.x-2) + 1 , ( rows - 1 ) / (block.y-2) + 1 );
+    cudaMemcpy(rgb_d, rgb, 3 * rows * cols, cudaMemcpyHostToDevice);
+
+    dim3 block(32, 4);
+    dim3 grid0((cols - 1) / block.x + 1, (rows - 1) / block.y + 1);
+    /**
+     * Pour la version shared il faut faire superposer les blocs de 2 pixels
+     * pour ne pas avoir de bandes non calculées autour des blocs
+     * on crée donc plus de blocs.
+     */
+    dim3 grid1((cols - 1) / (block.x - 2) + 1, (rows - 1) / (block.y - 2) + 1);
+
+    cudaEvent_t start, stop;
+
+    cudaEventCreate(&start);
+    cudaEventCreate(&stop);
+
+    // Mesure du temps de calcul du kernel uniquement.
+    cudaEventRecord(start);
+
+    /*
+    // Version en 2 étapes.
+    grayscale<<< grid0, block >>>( rgb_d, g_d, cols, rows );
+    sobel<<< grid0, block >>>( g_d, s_d, cols, rows );
+    */
+
+    /*
+    // Version en 2 étapes, Sobel avec mémoire shared.
+    grayscale<<< grid0, block >>>( rgb_d, g_d, cols, rows );
+    sobel_shared<<< grid1, block, block.x * block.y >>>( g_d, s_d, cols, rows );
+    */
+
+    // Version fusionnée.
+    // mémoire shared paramètre --> block.x * block.y
+    flou << < grid0, block >> > (rgb_d, s_d, cols, rows);
+    flou << < grid0, block >> > (s_d, rgb_d, cols, rows);
+
+    flou << < grid0, block >> > (rgb_d, s_d, cols, rows);
+    flou << < grid0, block >> > (s_d, rgb_d, cols, rows);
+
+    flou << < grid0, block >> > (rgb_d, s_d, cols, rows);
+    flou << < grid0, block >> > (s_d, rgb_d, cols, rows);
+
+    flou << < grid0, block >> > (rgb_d, s_d, cols, rows);
+    flou << < grid0, block >> > (s_d, rgb_d, cols, rows);
+
+    flou << < grid0, block >> > (rgb_d, s_d, cols, rows);
+    flou << < grid0, block >> > (s_d, rgb_d, cols, rows);
+
+    flou << < grid0, block >> > (rgb_d, s_d, cols, rows);
+    flou << < grid0, block >> > (s_d, rgb_d, cols, rows);
     
-  cudaEvent_t start, stop;
+    cudaEventRecord(stop);
 
-  cudaEventCreate( &start );
-  cudaEventCreate( &stop );
+    cudaMemcpy(g, s_d, 3 * rows * cols, cudaMemcpyDeviceToHost);
 
-  // Mesure du temps de calcul du kernel uniquement.
-  cudaEventRecord( start );
+    cudaEventSynchronize(stop);
+    float duration;
+    cudaEventElapsedTime(&duration, start, stop);
+    std::cout << "time=" << duration << std::endl;
 
-  /*
-  // Version en 2 étapes.
-  grayscale<<< grid0, block >>>( rgb_d, g_d, cols, rows );
-  sobel<<< grid0, block >>>( g_d, s_d, cols, rows );
-  */
+    cudaEventDestroy(start);
+    cudaEventDestroy(stop);
 
-  /*
-  // Version en 2 étapes, Sobel avec mémoire shared.
-  grayscale<<< grid0, block >>>( rgb_d, g_d, cols, rows );
-  sobel_shared<<< grid1, block, block.x * block.y >>>( g_d, s_d, cols, rows );
-  */
+    cv::imwrite(img_out, m_out);
 
-  // Version fusionnée.
-  // mémoire shared paramètre --> block.x * block.y
-  flou<<< grid0, block >>>( rgb_d, s_d, cols, rows );
+    cudaFree(rgb_d);
+    cudaFree(g_d);
+    cudaFree(s_d);
 
-  cudaEventRecord( stop );
-  
-  cudaMemcpy( g, s_d, 3 * rows * cols, cudaMemcpyDeviceToHost );
+    cudaFreeHost(g);
+    cudaFreeHost(rgb);
 
-  cudaEventSynchronize( stop );
-  float duration;
-  cudaEventElapsedTime( &duration, start, stop );
-  std::cout << "time=" << duration << std::endl;
-
-  cudaEventDestroy(start);
-  cudaEventDestroy(stop);
-
-  cv::imwrite( img_out, m_out );
-
-  cudaFree( rgb_d);
-  cudaFree( g_d);
-  cudaFree( s_d);
-
-  cudaFreeHost( g );
-  cudaFreeHost( rgb );
-  
-  return 0;
+    return 0;
 }
