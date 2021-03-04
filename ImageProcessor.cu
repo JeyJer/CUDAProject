@@ -410,7 +410,7 @@ int main( int argc , char **argv )
     cudaMemcpy( img_out_h, result_d, 3 * rows * cols, cudaMemcpyDeviceToHost );
 
     //---- Write img_out onto the disk
-    cv::imwrite( img_out_path, img_out_matrix );
+    cv::imwrite( cv::String(*img_out_path), img_out_matrix );
 
     //---- Free memory
     // host-side
