@@ -391,7 +391,7 @@ int main( int argc , char **argv )
             }
             //---- get chrono time elapsed
             recordCudaChrono( &stop );
-            cudaEventSynchronize( &stop );
+            cudaEventSynchronize( stop );
             float duration = getCudaChronoTimeElapsed( &start, &stop );
             // TODO Do something with duration
 
