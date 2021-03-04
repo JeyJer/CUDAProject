@@ -155,29 +155,24 @@ __global__ void flou( unsigned char * rgb, unsigned char * s, std::size_t cols, 
     };
     int diviseur = 1;
 
-  if( i > 1 && i < cols && j > 1 && j < rows )
+  if( i > 0 && i < cols && j > 0 && j < rows )
   {
-    auto h = matrix[0][0] * rgb[ (j-1)*cols + 3 * i - 1 ] + matrix[0][1] * rgb[ (j-1)*cols + 3 * i   ] + matrix[0][2] * rgb[ (j-1)*cols + 3 * i + 1 ]
-           + matrix[1][0] * rgb[ ( j  )*cols + 3 * i - 1 ] + matrix[1][1] * rgb[ (j  )*cols + 3 * i   ] + matrix[1][2] * rgb[ (j  )*cols + 3 * i + 1 ]
-           + matrix[2][0] * rgb[ (j+1)*cols + 3 * i - 1 ] + matrix[2][1] * rgb[ (j+1)*cols + 3 * i   ] + matrix[2][2] * rgb[ (j+1)*cols + 3 * i + 1 ];
+    auto h = matrix[0][0] * rgb[ 3 * ((j-1)*cols + i - 1) ] + matrix[0][1] * rgb[ 3 * ((j-1)*cols + i )   ] + matrix[0][2] * rgb[ 3 * ((j-1)*cols + i + 1) ]
+           + matrix[1][0] * rgb[ 3 * (( j  )*cols + i - 1) ] + matrix[1][1] * rgb[ 3 * ((j  )*cols + i)   ] + matrix[1][2] * rgb[ 3 * ((j  )*cols + i + 1) ]
+           + matrix[2][0] * rgb[ 3 * ((j+1)*cols + i - 1) ] + matrix[2][1] * rgb[ 3 * ((j+1)*cols + i)   ] + matrix[2][2] * rgb[ 3 * ((j+1)*cols + i + 1) ];
 
-      auto h_g = matrix[0][0] * rgb[ (j-1)*cols + 3 * i ] + matrix[0][1] * rgb[ (j-1)*cols + 3 * i + 1   ] + matrix[0][2] * rgb[ (j-1)*cols + 3 * i + 2 ]
-               + matrix[1][0] * rgb[ ( j  )*cols + 3 * i ] + matrix[1][1] * rgb[ (j  )*cols + 3 * i + 1   ] + matrix[1][2] * rgb[ (j  )*cols + 3 * i + 2 ]
-               + matrix[2][0] * rgb[ (j+1)*cols + 3 * i ] + matrix[2][1] * rgb[ (j+1)*cols + 3 * i + 1  ] + matrix[2][2] * rgb[ (j+1)*cols + 3 * i + 2 ];
+      auto h_g = matrix[0][0] * rgb[ 3 * ((j-1)*cols + i - 1) + 1 ] + matrix[0][1] * rgb[ 3 * ((j-1)*cols + i ) + 1  ] + matrix[0][2] * rgb[ 3 * ((j-1)*cols + i + 1) + 1 ]
+                 + matrix[1][0] * rgb[ 3 * (( j  )*cols + i - 1)  + 1  ] + matrix[1][1] * rgb[ 3 * ((j  )*cols + i)  + 1   ] + matrix[1][2] * rgb[ 3 * ((j  )*cols + i + 1)  + 1 ]
+                 + matrix[2][0] * rgb[ 3 * ((j+1)*cols + i - 1)  + 1 ] + matrix[2][1] * rgb[ 3 * ((j+1)*cols + i)  + 1  ] + matrix[2][2] * rgb[ 3 * ((j+1)*cols + i + 1)  + 1 ];
 
-      auto h_b = matrix[0][0] * rgb[ (j-1)*cols + 3 * i + 1 ] + matrix[0][1] * rgb[ (j-1)*cols + 3 * i + 2   ] + matrix[0][2] * rgb[ (j-1)*cols + 3 * i + 3 ]
-               + matrix[1][0] * rgb[ ( j  )*cols + 3 * i + 1 ] + matrix[1][1] * rgb[ (j  )*cols + 3 * i + 2  ] + matrix[1][2] * rgb[ (j  )*cols + 3 * i + 3 ]
-               + matrix[2][0] * rgb[ (j+1)*cols + 3 * i + 1 ] + matrix[2][1] * rgb[ (j+1)*cols + 3 * i + 2  ] + matrix[2][2] * rgb[ (j+1)*cols + 3 * i + 3 ];
+      auto h_b = matrix[0][0] * rgb[ 3 * ((j-1)*cols + i - 1) + 2 ] + matrix[0][1] * rgb[ 3 * ((j-1)*cols + i ) + 2   ] + matrix[0][2] * rgb[ 3 * ((j-1)*cols + i + 1) + 2 ]
+                 + matrix[1][0] * rgb[ 3 * (( j  )*cols + i - 1) + 2 ] + matrix[1][1] * rgb[ 3 * ((j  )*cols + i) + 2  ] + matrix[1][2] * rgb[ 3 * ((j  )*cols + i + 1) + 2 ]
+                 + matrix[2][0] * rgb[ 3 * ((j+1)*cols + i - 1) + 2] + matrix[2][1] * rgb[ 3 * ((j+1)*cols + i) + 2  ] + matrix[2][2] * rgb[ 3 * ((j+1)*cols + i + 1) + 2 ];
 
-      s[ j * cols + 3 * i ] = rgb[ j * cols + 3 * i] ;
-      s[ j * cols + 3 * i + 1 ] = rgb[ j * cols + 3 * i + 1] ;
-      s[ j * cols + 3 * i + 2 ] = rgb[ j * cols + 3 * i + 2] ;
 
-   /**
-    * s[ j * cols + 3 * i ] = (h / diviseur) ;
-    s[ j * cols + 3 * i + 1] = (h_g / diviseur) ;
-    s[ j * cols + 3 * i + 2] = (h_b / diviseur) ;
-    */
+    s[ 3 * (j * cols  + i) ] = (h / diviseur) ;
+    s[ 3 * (j * cols + i ) + 1] = (h_g / diviseur) ;
+    s[ 3 * (j * cols + i) + 2] = (h_b / diviseur) ;
 
   }
 }
@@ -198,7 +193,7 @@ int main()
   // Allocation de l'image de sortie en RAM côté CPU.
   unsigned char * g = nullptr;
   cudaMallocHost( &g, 3 * rows * cols );
-  cv::Mat m_out( rows, cols, CV_8UC1, g );
+  cv::Mat m_out( rows, cols, CV_8UC3, g );
 
   // Copie de l'image en entrée dans une mémoire dite "pinned" de manière à accélérer les transferts.
   // OpenCV alloue la mémoire en interne lors de la décompression de l'image donc soit sans doute avec
