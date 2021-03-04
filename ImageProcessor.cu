@@ -380,7 +380,7 @@ int main( int argc , char **argv )
 
         std::cout << "[" << filtersEnabled->at(i) << "] " << "Apply filters" << std::endl;
         // apply the filter how many passes wished
-        for( int i = 0 ; i < passNumber->at(i) ; ++i )
+        for( int j = 0 ; j < passNumber->at(i) ; ++j )
         {
             std::cout << "[" << filtersEnabled->at(i) << "] " << "Launch chrono" << std::endl;
             recordCudaChrono( &start );
