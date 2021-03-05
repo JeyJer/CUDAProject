@@ -226,10 +226,16 @@ void destroyCudaChrono( cudaEvent_t * start, cudaEvent_t * stop )
 
 //---- PROCESSING ----
 
-__global__ void image_processing(unsigned char* rgb, unsigned char* s, std::size_t cols, std::size_t rows, char ** matrix, int divider )
+__global__ void image_processing(unsigned char* rgb, unsigned char* s, std::size_t cols, std::size_t rows, int divider )
 {
     auto i = blockIdx.x * blockDim.x + threadIdx.x;
     auto j = blockIdx.y * blockDim.y + threadIdx.y;
+
+    int matrix[3][3] = {
+      { 1, 2, 1 },
+      { 2, 4, 2 },
+      { 1, 2, 1 }
+    };
 
     if (i > 0 && i < cols && j > 0 && j < rows)
     {
@@ -251,7 +257,7 @@ __global__ void image_processing(unsigned char* rgb, unsigned char* s, std::size
     }
 }
 
-__global__ void image_processing_shared(unsigned char* rgb, unsigned char* s, std::size_t cols, std::size_t rows, char ** matrix, int divider)
+__global__ void image_processing_shared(unsigned char* rgb, unsigned char* s, std::size_t cols, std::size_t rows, int divider)
 {
     auto i_global = blockIdx.x * (blockDim.x - 2) + threadIdx.x;
     auto j_global = blockIdx.y * (blockDim.y - 2) + threadIdx.y;
@@ -272,6 +278,12 @@ __global__ void image_processing_shared(unsigned char* rgb, unsigned char* s, st
     }
 
     __syncthreads();
+
+    int matrix[3][3] = {
+      { 1, 2, 1 },
+      { 2, 4, 2 },
+      { 1, 2, 1 }
+    };
 
     if (i_global < cols - 1 && j_global < rows - 1 && i > 0 && i < (w - 1) && j > 0 && j < (height - 1))
     {
@@ -369,7 +381,7 @@ int main( int argc , char **argv )
             if( !*useShared )
             {
                 std::cout << "[" << filtersEnabled->at(i) << "] " << "Non-shared processing" << std::endl;
-                image_processing<<< grid0, block >>>( rgb_d, result_d, cols, rows, conv_matrix, divider );
+                image_processing<<< grid0, block >>>( rgb_d, result_d, cols, rows, divider );
                 cudaDeviceSynchronize();
                 cudaError err = cudaGetLastError();
                 if( err != cudaSuccess )
@@ -384,7 +396,7 @@ int main( int argc , char **argv )
             else
             {
                 std::cout << "[" << filtersEnabled->at(i) << "] " << "Shared processing" << std::endl;
-                image_processing_shared<<< grid1, block, 3 * block.x * block.y >>>( rgb_d, result_d, cols, rows, conv_matrix, divider );
+                image_processing_shared<<< grid1, block, 3 * block.x * block.y >>>( rgb_d, result_d, cols, rows, divider );
             }
             //---- get chrono time elapsed
             std::cout << "[" << filtersEnabled->at(i) << "] " << "Stop chrono" << std::endl;
