@@ -410,12 +410,12 @@ int main( int argc , char **argv )
     // cancel the rgb_d and result_d invertion, to put back the result in result_d
     invert_pointer( rgb_d, result_d );
     //---- Allocate and fill memory (CPU-side) to store the device result
-    std::cout << "[" << filtersEnabled->at(i) << "] " << "Allocation" << std::endl;
+    std::cout << "[AFTER_PROCESSING] " << "Allocation" << std::endl;
     unsigned char* img_out_h = nullptr;
     cudaMallocHost( &img_out_h, 3 * rows * cols );
-    std::cout << "[" << filtersEnabled->at(i) << "] " << "OpenCV" << std::endl;
+    std::cout << "[AFTER_PROCESSING] " << "OpenCV" << std::endl;
     cv::Mat img_out_matrix( rows, cols, CV_8UC3, img_out_h );
-    std::cout << "[" << filtersEnabled->at(i) << "] " << "Memcpy" << std::endl;
+    std::cout << "[AFTER_PROCESSING] " << "Memcpy" << std::endl;
     cudaMemcpy( img_out_h, result_d, 3 * rows * cols, cudaMemcpyDeviceToHost );
 
     //---- Write img_out onto the disk
@@ -424,7 +424,7 @@ int main( int argc , char **argv )
 
     //---- Free memory
     // host-side
-    std::cout << "[" << filtersEnabled->at(i) << "] " << "Free" << std::endl;
+    std::cout << "[AFTER_PROCESSING] " << "Free" << std::endl;
     cudaFree( rgb_d );
     cudaFree( result_d );
     // device-side
