@@ -372,23 +372,28 @@ int main( int argc , char **argv )
     for( int i = 0 ; i < filtersEnabled->size() ; ++i )
     {
         // init the convolution matrix and the divider according to the filter
+        std::cout << "[" << filtersEnabled->at(i) << "] " << "Init matrix" << std::endl;
         char ** conv_matrix = init_conv_matrix( filtersEnabled->at(i) );
         if( conv_matrix == nullptr ) continue;
         int divider = init_divider( filtersEnabled->at(i) );
 
         // apply the filter how many passes wished
+        std::cout << "[" << filtersEnabled->at(i) << "] " << "Apply filters" << std::endl;
         for( int j = 0 ; j < passNumber->at(i) ; ++j )
         {
             recordCudaChrono( &start );
             if( !*useShared )
             {
+                std::cout << "[" << filtersEnabled->at(i) << "] " << "Non-shared processing" << std::endl;
                 image_processing<<< grid0, block >>>( rgb_d, result_d, cols, rows, conv_matrix, divider );
             }
             else
             {
+                std::cout << "[" << filtersEnabled->at(i) << "] " << "Shared processing" << std::endl;
                 image_processing_shared<<< grid1, block, 3 * block.x * block.y >>>( rgb_d, result_d, cols, rows, conv_matrix, divider );
             }
             //---- get chrono time elapsed
+            std::cout << "[" << filtersEnabled->at(i) << "] " << "Stop chrono" << std::endl;
             recordCudaChrono( &stop );
             cudaEventSynchronize( stop );
             float duration = getCudaChronoTimeElapsed( &start, &stop );
@@ -396,16 +401,21 @@ int main( int argc , char **argv )
             // TODO Do something with duration
 
             // invert rgb_d with result_d, for any other pass
+            std::cout << "[" << filtersEnabled->at(i) << "] " << " Invert pointers" << std::endl;
             invert_pointer( rgb_d, result_d );
         }
+        std::cout << "[" << filtersEnabled->at(i) << "] " << "Free matrix" << std::endl;
         free_conv_matrix( conv_matrix );
     }
     // cancel the rgb_d and result_d invertion, to put back the result in result_d
     invert_pointer( rgb_d, result_d );
     //---- Allocate and fill memory (CPU-side) to store the device result
+    std::cout << "[" << filtersEnabled->at(i) << "] " << "Allocation" << std::endl;
     unsigned char* img_out_h = nullptr;
     cudaMallocHost( &img_out_h, 3 * rows * cols );
+    std::cout << "[" << filtersEnabled->at(i) << "] " << "OpenCV" << std::endl;
     cv::Mat img_out_matrix( rows, cols, CV_8UC3, img_out_h );
+    std::cout << "[" << filtersEnabled->at(i) << "] " << "Memcpy" << std::endl;
     cudaMemcpy( img_out_h, result_d, 3 * rows * cols, cudaMemcpyDeviceToHost );
 
     //---- Write img_out onto the disk
@@ -414,6 +424,7 @@ int main( int argc , char **argv )
 
     //---- Free memory
     // host-side
+    std::cout << "[" << filtersEnabled->at(i) << "] " << "Free" << std::endl;
     cudaFree( rgb_d );
     cudaFree( result_d );
     // device-side
