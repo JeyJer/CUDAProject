@@ -61,27 +61,20 @@ void presavedParameters( std::string* img_in_path, std::string* img_out_path, bo
 
 //---- FILTERS ---
 
-int init_divider( std::string filter, int* divider_h )
+int init_divider( std::string filter )
 {
-    cudaMallocHost( &divider_h, sizeof(int) );
     if( filter.compare("boxblur") == 0 )
     {
-        *divider_h = 9;
+        return 9;
     }
     else if( filter.compare("gaussianblur") == 0 )
     {
-        *divider_h = 16;
+        return 16;
     }
     else
     {
-        *divider_h = 1;
+        return 1;
     }
-
-    int* divider_d;
-    cudaMalloc( &divider_d, sizeof(int) );
-    cudaMemcpy( divider_d, divider_h, sizeof(int), cudaMemcpyHostToDevice );
-
-    return divider_d;
 }
 
 char ** init_edge_detection_matrix()
@@ -365,9 +358,8 @@ int main( int argc , char **argv )
 
         // Jusqu'ici c'est bon quoi !
 
-        int* divider_h = nullptr;
-        int* divider_d = init_divider( filtersEnabled->at(i), divider_h );
-        std::cout << "divider_h = " << divider_h << std::endl;
+        int divider = init_divider( filtersEnabled->at(i) );
+        std::cout << divider << std::endl;
 
         // apply the filter how many passes wished
         std::cout << "[" << filtersEnabled->at(i) << "] " << "Apply filters" << std::endl;
