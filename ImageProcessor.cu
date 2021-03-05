@@ -317,8 +317,6 @@ int main( int argc , char **argv )
     cv::Mat img_in_matrix = cv::imread( *img_in_path, cv::IMREAD_UNCHANGED );
     auto rows = img_in_matrix.rows;
     auto cols = img_in_matrix.cols;
-    std::cout << "Rows ? " << rows << std::endl;
-    std::cout << "Cols ? " << cols << std::endl;
 
     //---- Allocate a cv::Mat (host-side) to store the device result
     std::cout << "[BEFORE_PROCESSING] " << "Allocation" << std::endl;
@@ -330,6 +328,7 @@ int main( int argc , char **argv )
     unsigned char* rgb = nullptr;
     cudaMallocHost( &rgb, 3 * rows * cols );
     std::memcpy( rgb, img_in_matrix.data, 3 * rows * cols );
+    std::cout << "rgb[0] = " << (int)rgb[0] << std::endl;
 
     //---- allocate and initialize image's pixel array (device-side)
     unsigned char* rgb_d;
@@ -337,7 +336,6 @@ int main( int argc , char **argv )
     cudaMalloc( &rgb_d, 3 * rows * cols );
     cudaMalloc( &result_d, 3 * rows * cols );
     cudaMemcpy( rgb_d, rgb, 3 * rows * cols, cudaMemcpyHostToDevice );
-    std::cout << "rgb_d[0] = " << (int)rgb_d[0] << std::endl;
 
     //---- Threads distribution
     // grid block
@@ -398,8 +396,8 @@ int main( int argc , char **argv )
 
     //---- Copy the result to cv::Mat
     std::cout << "[AFTER_PROCESSING] " << "Memcpy" << std::endl;
-    std::cout << "result_d[0] = " << (int)result_d[0] << std::endl;
     cudaMemcpy( img_out_h, result_d, 3 * rows * cols, cudaMemcpyDeviceToHost );
+    std::cout << "img_out_h[0] = " << (int)img_out_h[0] << std::endl;
 
     //---- Write img_out onto the disk
     std::cout << "OUT PATH : " << cv::String(*img_out_path) << std::endl;
