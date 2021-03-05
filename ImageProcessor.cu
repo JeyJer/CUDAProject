@@ -290,14 +290,14 @@ int main( int argc , char **argv )
     //---- Declarate and allocate parameters
     std::string img_in_path;
     std::string img_out_path;
-    int blockX, blockY;
-    bool useShare, streamNbr;
+    int blockX, blockY, streamNbr;
+    bool useShared;
     std::vector<std::string> filtersEnabled;
     std::vector<int> passNumber;
 
     //---- Initialize parameters
     // RELEASE_MODE
-    initParameters( &img_in_path, &img_out_path, &blockX, &blocky, &useShared, &streamNbr, &filtersEnabled, &passNumber, argc, argv );
+    initParameters( &img_in_path, &img_out_path, &blockX, &blockY, &useShared, &streamNbr, &filtersEnabled, &passNumber, argc, argv );
     // DEBUG_MODE
     // presavedParameters( &img_in_path, &img_out_path, &blockX, &blocky, &useShared, &streamNbr, &filtersEnabled, &passNumber );
 
