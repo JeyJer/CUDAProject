@@ -77,7 +77,7 @@ int init_divider( std::string filter )
     }
 }
 
-char ** init_edge_detection_matrix()
+__device__ char ** init_edge_detection_matrix()
 {
     char ** conv_matrix = new char*[ 3 ];
     for( int i = 0; i < 3; ++i )
@@ -96,7 +96,7 @@ char ** init_edge_detection_matrix()
     return conv_matrix;
 }
 
-char ** init_sharpen_matrix()
+__device__ char ** init_sharpen_matrix()
 {
     char ** conv_matrix = new char*[ 3 ];
     for( int i = 0; i < 3; ++i )
@@ -115,7 +115,7 @@ char ** init_sharpen_matrix()
     return conv_matrix;
 }
 
-char ** init_box_blur_matrix()
+__device__ char ** init_box_blur_matrix()
 {
     char ** conv_matrix = new char*[ 3 ];
     for( int i = 0; i < 3; ++i )
@@ -134,7 +134,7 @@ char ** init_box_blur_matrix()
     return conv_matrix;
 }
 
-char ** init_gaussian_blur_matrix()
+__device__ char ** init_gaussian_blur_matrix()
 {
     char ** conv_matrix = new char*[ 3 ];
     for( int i = 0; i < 3; ++i )
@@ -153,7 +153,7 @@ char ** init_gaussian_blur_matrix()
     return conv_matrix;
 }
 
-char ** init_conv_matrix( std::string filter )
+__device__ char ** init_conv_matrix( std::string filter )
 {
     if( filter.compare("edgedetection") == 0 )
     {
@@ -187,7 +187,7 @@ void invert_pointer( unsigned char * ptr1, unsigned char * ptr2 )
     ptr2 = invertion_ptr;
 }
 
-void free_conv_matrix( char ** array )
+__device__ void free_conv_matrix( char ** array )
 {
     for( int i = 0 ; i < 3 ; i++ )
         delete[] array[i];
@@ -226,16 +226,12 @@ void destroyCudaChrono( cudaEvent_t * start, cudaEvent_t * stop )
 
 //---- PROCESSING ----
 
-__global__ void image_processing(unsigned char* rgb, unsigned char* s, std::size_t cols, std::size_t rows, int divider )
+__global__ void image_processing(unsigned char* rgb, unsigned char* s, std::size_t cols, std::size_t rows, std::string filter, int divider )
 {
     auto i = blockIdx.x * blockDim.x + threadIdx.x;
     auto j = blockIdx.y * blockDim.y + threadIdx.y;
 
-    int matrix[3][3] = {
-      { -1, -1, -1 },
-      { -1, 8, -1 },
-      { -1, -1, -1 }
-    };
+    char ** matrix = init_conv_matrix( filter );
 
     if (i > 0 && i < cols && j > 0 && j < rows)
     {
@@ -255,9 +251,11 @@ __global__ void image_processing(unsigned char* rgb, unsigned char* s, std::size
         s[3 * (j * cols + i) + 1] = (h_g / divider);
         s[3 * (j * cols + i) + 2] = (h_b / divider);
     }
+
+    free_conv_matrix( conv_matrix );
 }
 
-__global__ void image_processing_shared(unsigned char* rgb, unsigned char* s, std::size_t cols, std::size_t rows, int divider)
+__global__ void image_processing_shared(unsigned char* rgb, unsigned char* s, std::size_t cols, std::size_t rows, std::string filter, int divider)
 {
     auto i_global = blockIdx.x * (blockDim.x - 2) + threadIdx.x;
     auto j_global = blockIdx.y * (blockDim.y - 2) + threadIdx.y;
@@ -279,11 +277,7 @@ __global__ void image_processing_shared(unsigned char* rgb, unsigned char* s, st
 
     __syncthreads();
 
-    int matrix[3][3] = {
-      { -1, -1, -1 },
-      { -1, 8, -1 },
-      { -1, -1, -1 }
-    };
+    char ** matrix = init_conv_matrix( filter );
 
     if (i_global < cols - 1 && j_global < rows - 1 && i > 0 && i < (w - 1) && j > 0 && j < (height - 1))
     {
@@ -303,6 +297,8 @@ __global__ void image_processing_shared(unsigned char* rgb, unsigned char* s, st
         s[3 * (j_global * cols + i_global) + 1] = (h_g / divider);
         s[3 * (j_global * cols + i_global) + 2] = (h_b / divider);
     }
+
+    free_conv_matrix( conv_matrix );
 }
 
 //----------------
@@ -363,13 +359,6 @@ int main( int argc , char **argv )
     //---- Launch image processing loop
     for( int i = 0 ; i < filtersEnabled->size() ; ++i )
     {
-        // init the convolution matrix and the divider according to the filter
-        std::cout << "[" << filtersEnabled->at(i) << "] " << "Init matrix" << std::endl;
-        char ** conv_matrix = init_conv_matrix( filtersEnabled->at(i) );
-        if( conv_matrix == nullptr ) continue;
-
-        // Jusqu'ici c'est bon quoi !
-
         int divider = init_divider( filtersEnabled->at(i) );
         std::cout << divider << std::endl;
 
@@ -381,7 +370,7 @@ int main( int argc , char **argv )
             if( !*useShared )
             {
                 std::cout << "[" << filtersEnabled->at(i) << "] " << "Non-shared processing" << std::endl;
-                image_processing<<< grid0, block >>>( rgb_d, result_d, cols, rows, divider );
+                image_processing<<< grid0, block >>>( rgb_d, result_d, cols, rows, filtersEnabled->at(i), divider );
                 cudaDeviceSynchronize();
                 cudaError err = cudaGetLastError();
                 if( err != cudaSuccess )
@@ -396,7 +385,7 @@ int main( int argc , char **argv )
             else
             {
                 std::cout << "[" << filtersEnabled->at(i) << "] " << "Shared processing" << std::endl;
-                image_processing_shared<<< grid1, block, 3 * block.x * block.y >>>( rgb_d, result_d, cols, rows, divider );
+                image_processing_shared<<< grid1, block, 3 * block.x * block.y >>>( rgb_d, result_d, cols, rows, filtersEnabled->at(i), divider );
             }
             //---- get chrono time elapsed
             std::cout << "[" << filtersEnabled->at(i) << "] " << "Stop chrono" << std::endl;
@@ -411,7 +400,6 @@ int main( int argc , char **argv )
             invert_pointer( rgb_d, result_d );
         }
         std::cout << "[" << filtersEnabled->at(i) << "] " << "Free matrix" << std::endl;
-        free_conv_matrix( conv_matrix );
     }
     // cancel the rgb_d and result_d invertion, to put back the result in result_d
     invert_pointer( rgb_d, result_d );
