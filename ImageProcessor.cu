@@ -135,21 +135,26 @@ int main()
     cudaMalloc(&rgb_d, 3 * rows * cols);
     cudaMalloc(&s_d, 3 * rows * cols);
 
-    cudaStream_t streams[ 2 ];
+    int NBSTREAM = 10;
+    cudaStream_t streams[ NBSTREAM ];
 
-    for( std::size_t i = 0 ; i < 2 ; ++i ) cudaStreamCreate( &streams[ i ] );
+    for( std::size_t i = 0 ; i < NBSTREAM ; ++i ) cudaStreamCreate( &streams[ i ] );
 
     int size = 3 * rows * cols;
     int size_bytes = size * (int)sizeof(unsigned char) ;
 
-    int i = 0;
-    cudaMemcpyAsync( rgb_d, rgb, size_bytes/2, cudaMemcpyHostToDevice, streams[ i ] );
+    // int i = 0;
+    // cudaMemcpyAsync( rgb_d, rgb, size_bytes/2, cudaMemcpyHostToDevice, streams[ i ] );
 
-    i++;
-    cudaMemcpyAsync( rgb_d + 3 * rows * cols /2, rgb + 3 * rows * cols /2, size_bytes/2, cudaMemcpyHostToDevice, streams[ i ] );
-   // for( std::size_t i = 0 ; i < 2 ; ++i ){
-    //    cudaMemcpyAsync( rgb_d + i * 3 * rows * cols /2 - 3 * cols, rgb + i * 3 * rows * cols /2 - 3 * cols, size_bytes/2, cudaMemcpyHostToDevice, streams[ i ] );
-    //}
+    // i++;
+    // cudaMemcpyAsync( rgb_d + 3 * rows * cols /2, rgb + 3 * rows * cols /2, size_bytes/2, cudaMemcpyHostToDevice, streams[ i ] );
+
+
+    for( std::size_t i = 0 ; i < NBSTREAM; ++i ){
+
+        cudaMemcpyAsync( rgb_d + i * size /NBSTREAM , rgb + i * size / NBSTREAM,
+                         size_bytes/NBSTREAM, cudaMemcpyHostToDevice, streams[ i ] );
+    }
 
     // cudaMemcpy(rgb_d, rgb, 3 * rows * cols, cudaMemcpyHostToDevice);
 
@@ -196,7 +201,7 @@ int main()
 
     dim3 grid2((cols - 1) / (block.x - 2) + 1, (rows - 1) / (block.y - 2) + 1);
 
-    int NBSTREAM = 4;
+
     for( std::size_t i = 0 ; i < NBSTREAM ; ++i )
     {
         flou_shared<<< grid2, block, 3 * block.x * block.y, streams[ i ] >>>( rgb_d + i * size/NBSTREAM, s_d + i * size/NBSTREAM, cols, rows/NBSTREAM );
@@ -211,8 +216,8 @@ int main()
 
     for( std::size_t i = 0 ; i < NBSTREAM ; ++i )
     {
-        cudaMemcpyAsync( g + i * (size/NBSTREAM - 3 * cols), s_d + i * (size / NBSTREAM + 3 * cols),
-                size_bytes/NBSTREAM - 3 * cols, cudaMemcpyDeviceToHost, streams[ i ] );
+        cudaMemcpyAsync( g + i * (size/NBSTREAM - 3 * cols), s_d + i * (size / NBSTREAM) + 3 * cols,
+                size_bytes/NBSTREAM - 3 * cols * sizeof(unsigned char), cudaMemcpyDeviceToHost, streams[ i ] );
 
     }
 
