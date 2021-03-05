@@ -155,6 +155,7 @@ char ** init_gaussian_blur_matrix()
 
 char ** init_conv_matrix( std::string filter )
 {
+    std::cout << "************** " << filter << std::endl;
     if( filter.compare("edgedetection") )
     {
         std::cout << "Return edgedetection" << std::endl;
