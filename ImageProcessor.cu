@@ -63,11 +63,11 @@ void presavedParameters( std::string* img_in_path, std::string* img_out_path, bo
 
 int init_divider( std::string filter )
 {
-    if( filter.compare("boxblur") )
+    if( filter.compare("boxblur") == 0 )
     {
         return 9;
     }
-    else if( filter.compare("gaussianblur") )
+    else if( filter.compare("gaussianblur") == 0 )
     {
         return 16;
     }
