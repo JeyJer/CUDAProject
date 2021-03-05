@@ -157,10 +157,12 @@ char ** init_conv_matrix( std::string filter )
 {
     if( filter.compare("edgedetection") )
     {
+        std::cout << "Return edgedetection" << std::endl;
         return init_edge_detection_matrix();
     }
     else if( filter.compare("sharpen") )
     {
+        std::cout << "Return sharpen" << std::endl;
         return init_sharpen_matrix();
     }
     else if( filter.compare("boxblur") )
@@ -170,6 +172,7 @@ char ** init_conv_matrix( std::string filter )
     }
     else if( filter.compare("gaussianblur") )
     {
+        std::cout << "Return gaussianblur" << std::endl;
         return init_gaussian_blur_matrix();
     }
     else
