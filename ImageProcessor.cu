@@ -66,15 +66,15 @@ int init_divider( std::string filter, int* divider_h )
     cudaMallocHost( &divider_h, sizeof(int) );
     if( filter.compare("boxblur") == 0 )
     {
-        std::memcpy( divider_h, 9, sizeof(int) );
+        *divider_h = 9;
     }
     else if( filter.compare("gaussianblur") == 0 )
     {
-        std::memcpy( divider_h, 16, sizeof(int) );
+        *divider_h = 16;
     }
     else
     {
-        std::memcpy( divider_h, 1, sizeof(int) );
+        *divider_h = 1;
     }
 
     int* divider_d;
