@@ -231,6 +231,12 @@ __global__ void image_processing(unsigned char* rgb, unsigned char* s, std::size
     auto i = blockIdx.x * blockDim.x + threadIdx.x;
     auto j = blockIdx.y * blockDim.y + threadIdx.y;
 
+    printf( "Adress of rgb_d : %p\n", rgb);
+    printf( "Adress of s_d : %p\n", rgb);
+
+    printf( "Matrix : {\n{ %i, %i, %i },\n{ %i, %i, %i },\n{ %i, %i, %i }\n}\n",
+        matrix[0], matrix[1], matrix[2], matrix[3], matrix[4], matrix[5], matrix[6], matrix[7], matrix[8] );
+
     if (i > 0 && i < cols && j > 0 && j < rows)
     {
         auto h_r = matrix[0] * rgb[3 * ((j - 1) * cols + i - 1)] + matrix[1] * rgb[3 * ((j - 1) * cols + i)] + matrix[2] * rgb[3 * ((j - 1) * cols + i + 1)]
