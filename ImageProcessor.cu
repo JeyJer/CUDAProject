@@ -317,6 +317,8 @@ int main( int argc , char **argv )
     cv::Mat img_in_matrix = cv::imread( *img_in_path, cv::IMREAD_UNCHANGED );
     auto rows = img_in_matrix.rows;
     auto cols = img_in_matrix.cols;
+    std::cout << "Rows ? " << rows << std::endl;
+    std::cout << "Cols ? " << cols << std::endl;
 
     //---- Allocate a cv::Mat (host-side) to store the device result
     std::cout << "[BEFORE_PROCESSING] " << "Allocation" << std::endl;
