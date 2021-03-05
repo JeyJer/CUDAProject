@@ -371,7 +371,7 @@ int main( int argc , char **argv )
         // apply the filter how many passes wished
         std::cout << "[" << filtersEnabled->at(i) << "] " << "Apply filters" << std::endl;
         for( int j = 0 ; j < passNumber->at(i) ; ++j )
-        {
+        { 
             recordCudaChrono( &start );
             if( !*useShared )
             {
