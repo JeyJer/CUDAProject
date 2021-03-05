@@ -233,6 +233,11 @@ __global__ void image_processing(unsigned char* rgb, unsigned char* s, std::size
 
     if (i > 0 && i < cols && j > 0 && j < rows)
     {
+        printf("[%i,%i] %i * %i + %i * %i + %i * %i +\n        %i * %i + %i * %i + %i * %i +\n        %i * %i + %i * %i + %i * %i\n\n",
+            i, j, matrix[0], rgb[3 * ((j - 1) * cols + i - 1)], matrix[1], rgb[3 * ((j - 1) * cols + i)], matrix[2], rgb[3 * ((j - 1) * cols + i + 1)],
+                  matrix[3], rgb[3 * ((j    ) * cols + i - 1)], matrix[4], rgb[3 * ((j    ) * cols + i)], matrix[5], rgb[3 * ((j    ) * cols + i + 1)],
+                  matrix[6], rgb[3 * ((j + 1) * cols + i - 1)], matrix[7], rgb[3 * ((j + 1) * cols + i)], matrix[8], rgb[3 * ((j + 1) * cols + i + 1)] );
+
         auto h_r = matrix[0] * rgb[3 * ((j - 1) * cols + i - 1)] + matrix[1] * rgb[3 * ((j - 1) * cols + i)] + matrix[2] * rgb[3 * ((j - 1) * cols + i + 1)]
                  + matrix[3] * rgb[3 * ((j    ) * cols + i - 1)] + matrix[4] * rgb[3 * ((j    ) * cols + i)] + matrix[5] * rgb[3 * ((j    ) * cols + i + 1)]
                  + matrix[6] * rgb[3 * ((j + 1) * cols + i - 1)] + matrix[7] * rgb[3 * ((j + 1) * cols + i)] + matrix[8] * rgb[3 * ((j + 1) * cols + i + 1)];
