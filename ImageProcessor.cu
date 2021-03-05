@@ -81,60 +81,60 @@ void init_edge_detection_matrix( char * conv_matrix_h )
 {
     cudaMallocHost( &conv_matrix_h, sizeof(char)*9 );
 
-    conv_matrix[0] = -1;
-    conv_matrix[1] = -1;
-    conv_matrix[2] = -1;
-    conv_matrix[3] = -1;
-    conv_matrix[4] = 8;
-    conv_matrix[5] = -1;
-    conv_matrix[6] = -1;
-    conv_matrix[7] = -1;
-    conv_matrix[8] = -1;
+    conv_matrix_h[0] = -1;
+    conv_matrix_h[1] = -1;
+    conv_matrix_h[2] = -1;
+    conv_matrix_h[3] = -1;
+    conv_matrix_h[4] = 8;
+    conv_matrix_h[5] = -1;
+    conv_matrix_h[6] = -1;
+    conv_matrix_h[7] = -1;
+    conv_matrix_h[8] = -1;
 }
 
 void init_sharpen_matrix( char * conv_matrix_h )
 {
     cudaMallocHost( &conv_matrix_h, sizeof(char)*9 );
 
-    conv_matrix[0] = 0;
-    conv_matrix[1] = -1;
-    conv_matrix[2] = 0;
-    conv_matrix[3] = -1;
-    conv_matrix[4] = 5;
-    conv_matrix[5] = -1;
-    conv_matrix[6] = 0;
-    conv_matrix[7] = -1;
-    conv_matrix[8] = 0;
+    conv_matrix_h[0] = 0;
+    conv_matrix_h[1] = -1;
+    conv_matrix_h[2] = 0;
+    conv_matrix_h[3] = -1;
+    conv_matrix_h[4] = 5;
+    conv_matrix_h[5] = -1;
+    conv_matrix_h[6] = 0;
+    conv_matrix_h[7] = -1;
+    conv_matrix_h[8] = 0;
 }
 
 void init_box_blur_matrix( char * conv_matrix_h )
 {
     cudaMallocHost( &conv_matrix_h, sizeof(char)*9 );
 
-    conv_matrix[0] = 1;
-    conv_matrix[1] = 1;
-    conv_matrix[2] = 1;
-    conv_matrix[3] = 1;
-    conv_matrix[4] = 1;
-    conv_matrix[5] = 1;
-    conv_matrix[6] = 1;
-    conv_matrix[7] = 1;
-    conv_matrix[8] = 1;
+    conv_matrix_h[0] = 1;
+    conv_matrix_h[1] = 1;
+    conv_matrix_h[2] = 1;
+    conv_matrix_h[3] = 1;
+    conv_matrix_h[4] = 1;
+    conv_matrix_h[5] = 1;
+    conv_matrix_h[6] = 1;
+    conv_matrix_h[7] = 1;
+    conv_matrix_h[8] = 1;
 }
 
 void init_gaussian_blur_matrix( char * conv_matrix_h )
 {
     cudaMallocHost( &conv_matrix_h, sizeof(char)*9 );
 
-    conv_matrix[0] = 1;
-    conv_matrix[1] = 2;
-    conv_matrix[2] = 1;
-    conv_matrix[3] = 2;
-    conv_matrix[4] = 4;
-    conv_matrix[5] = 2;
-    conv_matrix[6] = 1;
-    conv_matrix[7] = 2;
-    conv_matrix[8] = 1;
+    conv_matrix_h[0] = 1;
+    conv_matrix_h[1] = 2;
+    conv_matrix_h[2] = 1;
+    conv_matrix_h[3] = 2;
+    conv_matrix_h[4] = 4;
+    conv_matrix_h[5] = 2;
+    conv_matrix_h[6] = 1;
+    conv_matrix_h[7] = 2;
+    conv_matrix_h[8] = 1;
 }
 
 void init_conv_matrix_h( std::string filter, char * conv_matrix_h )
