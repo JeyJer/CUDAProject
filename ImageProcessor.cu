@@ -294,7 +294,7 @@ int main( int argc , char **argv )
     int blockX, blockY, streamNbr;
     bool useShared;
     std::vector<std::string> filtersEnabled;
-    std::vector<std::int> passNumber;
+    std::vector<int> passNumber;
 
     //---- Initialize parameters
     // RELEASE_MODE
