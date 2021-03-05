@@ -356,15 +356,7 @@ int main( int argc , char **argv )
         char ** conv_matrix = init_conv_matrix( filtersEnabled->at(i) );
         if( conv_matrix == nullptr ) continue;
 
-        std::cout << "matrix[][0] = " << (int)conv_matrix[0][0] << std::endl;
-        std::cout << "matrix[][1] = " << (int)conv_matrix[0][1] << std::endl;
-        std::cout << "matrix[][2] = " << (int)conv_matrix[0][2] << std::endl;
-        std::cout << "matrix[][0] = " << (int)conv_matrix[1][0] << std::endl;
-        std::cout << "matrix[][1] = " << (int)conv_matrix[1][1] << std::endl;
-        std::cout << "matrix[][2] = " << (int)conv_matrix[1][2] << std::endl;
-        std::cout << "matrix[][0] = " << (int)conv_matrix[2][0] << std::endl;
-        std::cout << "matrix[][1] = " << (int)conv_matrix[2][1] << std::endl;
-        std::cout << "matrix[][2] = " << (int)conv_matrix[2][2] << std::endl;
+        // Jusqu'ici c'est bon quoi !
 
         int divider = init_divider( filtersEnabled->at(i) );
 
@@ -377,6 +369,8 @@ int main( int argc , char **argv )
             {
                 std::cout << "[" << filtersEnabled->at(i) << "] " << "Non-shared processing" << std::endl;
                 image_processing<<< grid0, block >>>( rgb_d, result_d, cols, rows, conv_matrix, divider );
+                std::cout << "rgb_d[0] = " << (int)rgb_d[0] << std::endl;
+                std::cout << "result_d[0] = " << (int)result_d[0] << std::endl;
             }
             else
             {
