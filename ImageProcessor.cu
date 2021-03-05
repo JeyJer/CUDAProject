@@ -232,18 +232,15 @@ __global__ void image_processing(unsigned char* rgb, unsigned char* s, std::size
     auto i = blockIdx.x * blockDim.x + threadIdx.x;
     auto j = blockIdx.y * blockDim.y + threadIdx.y;
 
-    /*
-    int matrix[3][3] = {
-      { 1, 2, 1 },
-      { 2, 4, 2 },
-      { 1, 2, 1 }
-    };
-    char matrix[3][3] = {
-            { 1, 1, 1 },
-            { 1, 1, 1 },
-            { 1, 1, 1 }
-    };
-    */
+        std::cout << "matrix[0][0] = " << (int)matrix[0][0] << std::endl;
+        std::cout << "matrix[0][1] = " << (int)matrix[0][1] << std::endl;
+        std::cout << "matrix[0][2] = " << (int)matrix[0][2] << std::endl;
+        std::cout << "matrix[1][0] = " << (int)matrix[1][0] << std::endl;
+        std::cout << "matrix[1][1] = " << (int)matrix[1][1] << std::endl;
+        std::cout << "matrix[1][2] = " << (int)matrix[1][2] << std::endl;
+        std::cout << "matrix[2][0] = " << (int)matrix[2][0] << std::endl;
+        std::cout << "matrix[2][1] = " << (int)matrix[2][1] << std::endl;
+        std::cout << "matrix[2][2] = " << (int)matrix[2][2] << std::endl;
 
     if (i > 0 && i < cols && j > 0 && j < rows)
     {
