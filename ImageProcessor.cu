@@ -339,7 +339,6 @@ int main( int argc , char **argv )
         cudaMemcpy( conv_matrix_d, conv_matrix_h, sizeof(char)*9, cudaMemcpyHostToDevice );
 
         int divider = init_divider( filtersEnabled->at(i) );
-        std::cout << divider << std::endl;
 
         // apply the filter how many passes wished
         for( int j = 0 ; j < passNumber->at(i) ; ++j )
@@ -353,12 +352,15 @@ int main( int argc , char **argv )
                 cudaError err = cudaGetLastError();
                 if( err != cudaSuccess )
                     std::cerr << cudaGetErrorString( err ) << std::endl;
-                else
-                    std::cout << "ALL IS GOOD" << std::endl;
             }
             else
             {
                 image_processing_shared<<< grid1, block, 3 * block.x * block.y >>>( rgb_d, result_d, cols, rows, conv_matrix_d, divider );
+
+                cudaDeviceSynchronize();
+                cudaError err = cudaGetLastError();
+                if( err != cudaSuccess )
+                    std::cerr << cudaGetErrorString( err ) << std::endl;
             }
             //---- get chrono time elapsed
             recordCudaChrono( &stop );
@@ -368,7 +370,11 @@ int main( int argc , char **argv )
             // TODO Do something with duration
 
             // invert rgb_d with result_d, for any other pass
+            std::cout << rgb_d << std::endl;
+            std::cout << result_d << std::endl;
             invert_pointer( rgb_d, result_d );
+            std::cout << rgb_d << std::endl;
+            std::cout << result_d << std::endl;
         }
         // TODO free matrix here
     }
