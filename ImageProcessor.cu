@@ -370,11 +370,7 @@ int main( int argc , char **argv )
             // TODO Do something with duration
 
             // invert rgb_d with result_d, for any other pass
-            std::cout << rgb_d << std::endl;
-            std::cout << result_d << std::endl;
             invert_pointer( rgb_d, result_d );
-            std::cout << rgb_d << std::endl;
-            std::cout << result_d << std::endl;
         }
         // TODO free matrix here
     }
