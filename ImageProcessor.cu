@@ -290,18 +290,16 @@ __global__ void image_processing_shared(unsigned char* rgb, unsigned char* s, st
 int main( int argc , char **argv )
 {
     //---- Declarate and allocate parameters
-    std::string img_in_path;
-    std::string img_out_path;
+    std::string img_in_path, img_out_path;
     int blockX, blockY, streamNbr;
     bool useShared;
-    std::vector<std::string> filtersEnabled;
-    std::vector<int> passNumber;
+    std::vector<std::string> filtersEnabled, passNumber;
 
     //---- Initialize parameters
     // RELEASE_MODE
     initParameters( &img_in_path, &img_out_path, &blockX, &blockY, &useShared, &streamNbr, &filtersEnabled, &passNumber, argc, argv );
     // DEBUG_MODE
-    // presavedParameters( &img_in_path, &img_out_path, &blockX, &blocky, &useShared, &streamNbr, &filtersEnabled, &passNumber );
+    // presavedParameters( &img_in_path, &img_out_path, &blockX, &blockY, &useShared, &streamNbr, &filtersEnabled, &passNumber );
 
     //---- Retrieve image properties
     cv::Mat img_in_matrix = cv::imread( img_in_path, cv::IMREAD_UNCHANGED );
@@ -382,6 +380,8 @@ int main( int argc , char **argv )
             invert_pointer( rgb_d, result_d );
         }
         // TODO free matrix here
+        cudaFreeHost( conv_matrix_h );
+        cudaFree( conv_matrix_d );
     }
     // cancel the rgb_d and result_d invertion, to put back the result in result_d
     invert_pointer( rgb_d, result_d );
