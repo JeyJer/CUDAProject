@@ -196,23 +196,25 @@ int main()
 
     dim3 grid2((cols - 1) / (block.x - 2) + 1, (rows - 1) / (block.y - 2) + 1);
 
-
-    for( std::size_t i = 0 ; i < 2 ; ++i )
+    int NBSTREAM = 4;
+    for( std::size_t i = 0 ; i < NBSTREAM ; ++i )
     {
-        flou_shared<<< grid2, block, 3 * block.x * block.y, streams[ i ] >>>( rgb_d + i * size/2, s_d + i * size/2, cols, rows/2 );
+        flou_shared<<< grid2, block, 3 * block.x * block.y, streams[ i ] >>>( rgb_d + i * size/NBSTREAM, s_d + i * size/NBSTREAM, cols, rows/NBSTREAM );
     }
 
     // flou_shared<<< grid1, block, 3 * block.x * block.y >>>( rgb_d, s_d, cols, rows );
 
-    cudaMemcpyAsync( g , s_d, size_bytes/2 - 3 * cols, cudaMemcpyDeviceToHost, streams[ 0 ] );
-    cudaMemcpyAsync( g + size/2 - 3 * cols, s_d + size/2 + 3 * cols, size_bytes/2 - 3 * cols, cudaMemcpyDeviceToHost, streams[ 1 ] );
+    // cudaMemcpyAsync( g , s_d, size_bytes/2 - 3 * cols, cudaMemcpyDeviceToHost, streams[ 0 ] );
+    // cudaMemcpyAsync( g + size/2 - 3 * cols, s_d + size/2 + 3 * cols, size_bytes/2 - 3 * cols, cudaMemcpyDeviceToHost, streams[ 1 ] );
 
 
 
-    // for( std::size_t i = 0 ; i < 2 ; ++i )
-    // {
-    //    cudaMemcpyAsync( g + i*size/2, s_d + i * size/2, size_bytes/2, cudaMemcpyDeviceToHost, streams[ i ] );
-    // }
+    for( std::size_t i = 0 ; i < NBSTREAM ; ++i )
+    {
+        cudaMemcpyAsync( g + i * (size/NBSTREAM - 3 * cols), s_d + i * (size / NBSTREAM + 3 * cols),
+                size_bytes/NBSTREAM - 3 * cols, cudaMemcpyDeviceToHost, streams[ i ] );
+
+    }
 
     cudaDeviceSynchronize();
 
@@ -223,7 +225,7 @@ int main()
 
     cudaEventSynchronize(stop);
 
-    for( std::size_t i = 0 ; i < 2 ; ++i )
+    for( std::size_t i = 0 ; i < NBSTREAM ; ++i )
     {
         cudaStreamDestroy( streams[ i ] );
     }
