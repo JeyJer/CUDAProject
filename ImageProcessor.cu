@@ -338,7 +338,7 @@ int main( int argc , char **argv )
         char * conv_matrix_h, *conv_matrix_d;
         init_conv_matrix_h( filtersEnabled->at(i), conv_matrix_h );
         cudaMalloc( &conv_matrix_d, sizeof(char)*9 );
-        cudaMemcpy( conv_matrix_h, conv_matrix_d, sizeof(char)*9, cudaMemcpyHostToDevice );
+        cudaMemcpy( conv_matrix_d, conv_matrix_h, sizeof(char)*9, cudaMemcpyHostToDevice );
 
         int divider = init_divider( filtersEnabled->at(i) );
         std::cout << divider << std::endl;
