@@ -369,15 +369,15 @@ int main( int argc , char **argv )
         char ** conv_matrix = init_conv_matrix( filtersEnabled->at(i) );
         if( conv_matrix == nullptr ) continue;
 
-        std::cout << "matrix[0][0] = " << (int)init_conv_matrix[0][0] << std::endl;
-        std::cout << "matrix[0][1] = " << (int)init_conv_matrix[0][1] << std::endl;
-        std::cout << "matrix[0][2] = " << (int)init_conv_matrix[0][2] << std::endl;
-        std::cout << "matrix[1][0] = " << (int)init_conv_matrix[1][0] << std::endl;
-        std::cout << "matrix[1][1] = " << (int)init_conv_matrix[1][1] << std::endl;
-        std::cout << "matrix[1][2] = " << (int)init_conv_matrix[1][2] << std::endl;
-        std::cout << "matrix[2][0] = " << (int)init_conv_matrix[2][0] << std::endl;
-        std::cout << "matrix[2][1] = " << (int)init_conv_matrix[2][1] << std::endl;
-        std::cout << "matrix[2][2] = " << (int)init_conv_matrix[2][2] << std::endl;
+        std::cout << "matrix[0][0] = " << 48+init_conv_matrix[0][0] << std::endl;
+        std::cout << "matrix[0][1] = " << 48+init_conv_matrix[0][1] << std::endl;
+        std::cout << "matrix[0][2] = " << 48init_conv_matrix[0][2] << std::endl;
+        std::cout << "matrix[1][0] = " << 48init_conv_matrix[1][0] << std::endl;
+        std::cout << "matrix[1][1] = " << 48init_conv_matrix[1][1] << std::endl;
+        std::cout << "matrix[1][2] = " << 48init_conv_matrix[1][2] << std::endl;
+        std::cout << "matrix[2][0] = " << 48init_conv_matrix[2][0] << std::endl;
+        std::cout << "matrix[2][1] = " << 48init_conv_matrix[2][1] << std::endl;
+        std::cout << "matrix[2][2] = " << 48init_conv_matrix[2][2] << std::endl;
 
         int divider = init_divider( filtersEnabled->at(i) );
 
