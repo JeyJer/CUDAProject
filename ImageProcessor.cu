@@ -209,7 +209,7 @@ void destroyCudaChrono( cudaEvent_t * start, cudaEvent_t * stop )
 
 //---- PROCESSING ----
 
-__global__ void image_processing(unsigned char* rgb, unsigned char* s, std::size_t cols, std::size_t rows, char * matrix, int divider )
+__global__ void image_processing(unsigned char* rgb, unsigned char* s, std::size_t cols, std::size_t rows, char * matrix, int* divider )
 {
     auto i = blockIdx.x * blockDim.x + threadIdx.x;
     auto j = blockIdx.y * blockDim.y + threadIdx.y;
@@ -228,13 +228,13 @@ __global__ void image_processing(unsigned char* rgb, unsigned char* s, std::size
                  + matrix[3] * rgb[3 * ((j    ) * cols + i - 1) + 2] + matrix[4] * rgb[3 * ((j    ) * cols + i) + 2] + matrix[5] * rgb[3 * ((j    ) * cols + i + 1) + 2]
                  + matrix[6] * rgb[3 * ((j + 1) * cols + i - 1) + 2] + matrix[7] * rgb[3 * ((j + 1) * cols + i) + 2] + matrix[8] * rgb[3 * ((j + 1) * cols + i + 1) + 2];
 
-        s[3 * (j * cols + i)    ] = (h_r / divider);
-        s[3 * (j * cols + i) + 1] = (h_g / divider);
-        s[3 * (j * cols + i) + 2] = (h_b / divider);
+        s[3 * (j * cols + i)    ] = (h_r / *divider);
+        s[3 * (j * cols + i) + 1] = (h_g / *divider);
+        s[3 * (j * cols + i) + 2] = (h_b / *divider);
     }
 }
 
-__global__ void image_processing_shared(unsigned char* rgb, unsigned char* s, std::size_t cols, std::size_t rows, char * matrix, int divider)
+__global__ void image_processing_shared(unsigned char* rgb, unsigned char* s, std::size_t cols, std::size_t rows, char * matrix, int* divider)
 {
     auto i_global = blockIdx.x * (blockDim.x - 2) + threadIdx.x;
     auto j_global = blockIdx.y * (blockDim.y - 2) + threadIdx.y;
@@ -270,9 +270,9 @@ __global__ void image_processing_shared(unsigned char* rgb, unsigned char* s, st
                  + matrix[3] * sh[3 * ((j    ) * w + i - 1) + 2] + matrix[4] * sh[3 * ((j    ) * w + i) + 2] + matrix[5] * sh[3 * ((j    ) * w + i + 1) + 2]
                  + matrix[6] * sh[3 * ((j + 1) * w + i - 1) + 2] + matrix[7] * sh[3 * ((j + 1) * w + i) + 2] + matrix[8] * sh[3 * ((j + 1) * w + i + 1) + 2];
 
-        s[3 * (j_global * cols + i_global)    ] = (h_r / divider);
-        s[3 * (j_global * cols + i_global) + 1] = (h_g / divider);
-        s[3 * (j_global * cols + i_global) + 2] = (h_b / divider);
+        s[3 * (j_global * cols + i_global)    ] = (h_r / *divider);
+        s[3 * (j_global * cols + i_global) + 1] = (h_g / *divider);
+        s[3 * (j_global * cols + i_global) + 2] = (h_b / *divider);
     }
 }
 
