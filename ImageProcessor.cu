@@ -369,7 +369,7 @@ int main( int argc , char **argv )
         char ** conv_matrix = init_conv_matrix( filtersEnabled->at(i) );
         if( conv_matrix == nullptr ) continue;
 
-        std::cout << "matrix[0][0] = " << (init_conv_matrix[0][0]+70) << std::endl;
+        std::cout << "matrix[0][0] = " << (conv_matrix[0][0]+70) << std::endl;
         /*std::cout << "matrix[0][1] = " << 48+init_conv_matrix[0][1] << std::endl;
         std::cout << "matrix[0][2] = " << 48init_conv_matrix[0][2] << std::endl;
         std::cout << "matrix[1][0] = " << 48init_conv_matrix[1][0] << std::endl;
