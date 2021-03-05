@@ -344,6 +344,12 @@ int main( int argc , char **argv )
     auto rows = img_in_matrix.rows;
     auto cols = img_in_matrix.cols;
 
+    //---- Allocate a cv::Mat (host-side) to store the device result
+    std::cout << "[BEFORE_PROCESSING] " << "Allocation" << std::endl;
+    unsigned char* img_out_h = nullptr;
+    cudaMallocHost( &img_out_h, 3 * rows * cols );
+    cv::Mat img_out_matrix( rows, cols, CV_8UC3, img_out_h );
+
     //---- allocate and initialize image's pixel array (host-side)
     unsigned char* rgb = nullptr;
     cudaMallocHost( &rgb, 3 * rows * cols );
@@ -409,12 +415,8 @@ int main( int argc , char **argv )
     }
     // cancel the rgb_d and result_d invertion, to put back the result in result_d
     invert_pointer( rgb_d, result_d );
-    //---- Allocate and fill memory (CPU-side) to store the device result
-    std::cout << "[AFTER_PROCESSING] " << "Allocation" << std::endl;
-    unsigned char* img_out_h = nullptr;
-    cudaMallocHost( &img_out_h, 3 * rows * cols );
-    std::cout << "[AFTER_PROCESSING] " << "OpenCV" << std::endl;
-    cv::Mat img_out_matrix( rows, cols, CV_8UC3, img_out_h );
+
+    //---- Copy the result to cv::Mat
     std::cout << "[AFTER_PROCESSING] " << "Memcpy" << std::endl;
     cudaMemcpy( img_out_h, result_d, 3 * rows * cols, cudaMemcpyDeviceToHost );
 
