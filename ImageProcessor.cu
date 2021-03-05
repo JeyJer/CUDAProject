@@ -232,16 +232,6 @@ __global__ void image_processing(unsigned char* rgb, unsigned char* s, std::size
     auto i = blockIdx.x * blockDim.x + threadIdx.x;
     auto j = blockIdx.y * blockDim.y + threadIdx.y;
 
-        std::cout << "matrix[0][0] = " << (int)matrix[0][0] << std::endl;
-        std::cout << "matrix[0][1] = " << (int)matrix[0][1] << std::endl;
-        std::cout << "matrix[0][2] = " << (int)matrix[0][2] << std::endl;
-        std::cout << "matrix[1][0] = " << (int)matrix[1][0] << std::endl;
-        std::cout << "matrix[1][1] = " << (int)matrix[1][1] << std::endl;
-        std::cout << "matrix[1][2] = " << (int)matrix[1][2] << std::endl;
-        std::cout << "matrix[2][0] = " << (int)matrix[2][0] << std::endl;
-        std::cout << "matrix[2][1] = " << (int)matrix[2][1] << std::endl;
-        std::cout << "matrix[2][2] = " << (int)matrix[2][2] << std::endl;
-
     if (i > 0 && i < cols && j > 0 && j < rows)
     {
         auto h_r = matrix[0][0] * rgb[3 * ((j - 1) * cols + i - 1)] + matrix[0][1] * rgb[3 * ((j - 1) * cols + i)] + matrix[0][2] * rgb[3 * ((j - 1) * cols + i + 1)]
@@ -378,6 +368,17 @@ int main( int argc , char **argv )
         std::cout << "[" << filtersEnabled->at(i) << "] " << "Init matrix" << std::endl;
         char ** conv_matrix = init_conv_matrix( filtersEnabled->at(i) );
         if( conv_matrix == nullptr ) continue;
+
+        std::cout << "matrix[0][0] = " << (int)matrix[0][0] << std::endl;
+        std::cout << "matrix[0][1] = " << (int)matrix[0][1] << std::endl;
+        std::cout << "matrix[0][2] = " << (int)matrix[0][2] << std::endl;
+        std::cout << "matrix[1][0] = " << (int)matrix[1][0] << std::endl;
+        std::cout << "matrix[1][1] = " << (int)matrix[1][1] << std::endl;
+        std::cout << "matrix[1][2] = " << (int)matrix[1][2] << std::endl;
+        std::cout << "matrix[2][0] = " << (int)matrix[2][0] << std::endl;
+        std::cout << "matrix[2][1] = " << (int)matrix[2][1] << std::endl;
+        std::cout << "matrix[2][2] = " << (int)matrix[2][2] << std::endl;
+
         int divider = init_divider( filtersEnabled->at(i) );
 
         // apply the filter how many passes wished
