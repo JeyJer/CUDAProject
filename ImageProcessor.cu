@@ -13,7 +13,8 @@ void printParameters( std::string txtBold, std::string txtNormal, bool isTxtBold
     std::cout << "\033[1" << ((isTxtBoldUnderlined) ? ";4" : "") << "m" << txtBold << "\033[0m" << txtNormal << std::endl;
 }
 
-void initParameters( std::string * img_in_path, std::string * img_out_path, bool * useShared,
+void initParameters( std::string * img_in_path, std::string * img_out_path,
+    int * blockX, int * blockY, bool * useShared, int * streamNbr,
     std::vector<std::string> * filtersEnabled, std::vector<int> * passNumber,
     int argc , char **argv )
 {
@@ -23,10 +24,14 @@ void initParameters( std::string * img_in_path, std::string * img_out_path, bool
     *img_in_path = argv[1];
     *img_out_path = argv[2];
 
-    // Save if the program will use shared memory.
-    *useShared = std::atoi( argv[3] );
+    *blockX = std::atoi(argv[3]);
+    *blockY = std::atoi(argv[4]);
 
-    for( int i = 4 ; i < argc ; i+=2 )
+    // Save if the program will use shared memory.
+    *useShared = std::atoi( argv[5] );
+    *streamNbr = std::atoi( argv[6] );
+
+    for( int i = 7 ; i < argc ; i+=2 )
     {
         filtersEnabled->push_back( argv[i] );
         passNumber->push_back( std::atoi(argv[i+1]) );
@@ -39,6 +44,10 @@ void initParameters( std::string * img_in_path, std::string * img_out_path, bool
 
     printParameters( "• CUDA Options :", "", false );
     printParameters( "Memory Shared enabled ?", ((*useShared) ? " Yes" : " No"), true );
+    if( *streamNbr > 0 )
+        printParameters( "Streams enabled :", " "+std::to_string(*streamNbr), true );
+    else
+        printParameters( "Streams enabled ?", " No", true );
     std::cout << std::endl;
 
     printParameters( "• Image filters :", "", false );
@@ -49,14 +58,18 @@ void initParameters( std::string * img_in_path, std::string * img_out_path, bool
     std::cout << std::endl;
 }
 
-void presavedParameters( std::string* img_in_path, std::string* img_out_path, bool* useShared,
-    std::vector<std::string>* filtersEnabled, std::vector<int> * passNumber )
+void presavedParameters( std::string * img_in_path, std::string * img_out_path,
+    int * blockX, int * blockY, bool * useShared, int * streamNbr,
+    std::vector<std::string> * filtersEnabled, std::vector<int> * passNumber )
 {
-    *img_in_path = "/mnt/data/tsky-19/eclipsec/CUDAProject_branch1/in.jpg";
-    *img_out_path = "/mnt/data/tsky-19/eclipsec/CUDAProject_branch1/out.jpg";
+    *img_in_path = "./in.jpg";
+    *img_out_path = "./out.jpg";
+    *blockX = 4;
+    *blockY = 32;
     *useShared = 0;
-    filtersEnabled->push_back( "edgedetection" );
-    passNumber->push_back( 1 );
+    *streamNbr = 0;
+    filtersEnabled->push_back( "BoxBlur" );
+    passNumber->push_back( 10 );
 }
 
 //---- FILTERS ---
@@ -79,7 +92,6 @@ int init_divider( std::string filter )
 
 void init_edge_detection_matrix( char * conv_matrix_h )
 {
-
     conv_matrix_h[0] = -1;
     conv_matrix_h[1] = -1;
     conv_matrix_h[2] = -1;
@@ -93,7 +105,6 @@ void init_edge_detection_matrix( char * conv_matrix_h )
 
 void init_sharpen_matrix( char * conv_matrix_h )
 {
-
     conv_matrix_h[0] = 0;
     conv_matrix_h[1] = -1;
     conv_matrix_h[2] = 0;
@@ -107,7 +118,6 @@ void init_sharpen_matrix( char * conv_matrix_h )
 
 void init_box_blur_matrix( char * conv_matrix_h )
 {
-
     conv_matrix_h[0] = 1;
     conv_matrix_h[1] = 1;
     conv_matrix_h[2] = 1;
@@ -121,7 +131,6 @@ void init_box_blur_matrix( char * conv_matrix_h )
 
 void init_gaussian_blur_matrix( char * conv_matrix_h )
 {
-
     conv_matrix_h[0] = 1;
     conv_matrix_h[1] = 2;
     conv_matrix_h[2] = 1;
@@ -279,20 +288,21 @@ __global__ void image_processing_shared(unsigned char* rgb, unsigned char* s, st
 int main( int argc , char **argv )
 {
     //---- Declarate and allocate parameters
-    std::string *img_in_path = new std::string();
-    std::string *img_out_path = new std::string();
-    bool *useShared = new bool;
-    std::vector<std::string> *filtersEnabled = new std::vector<std::string>();
-    std::vector<int> *passNumber = new std::vector<int>();
+    std::string img_in_path;
+    std::string img_out_path;
+    int blockX, blockY;
+    bool useShare, streamNbr;
+    std::vector<std::string> filtersEnabled;
+    std::vector<int> passNumber;
 
     //---- Initialize parameters
     // RELEASE_MODE
-    // initParameters( img_in_path, img_out_path, useShared, filtersEnabled, passNumber, argc, argv );
+    initParameters( &img_in_path, &img_out_path, &blockX, &blocky, &useShared, &streamNbr, &filtersEnabled, &passNumber, argc, argv );
     // DEBUG_MODE
-    presavedParameters( img_in_path, img_out_path, useShared, filtersEnabled, passNumber );
+    // presavedParameters( &img_in_path, &img_out_path, &blockX, &blocky, &useShared, &streamNbr, &filtersEnabled, &passNumber );
 
     //---- Retrieve image properties
-    cv::Mat img_in_matrix = cv::imread( *img_in_path, cv::IMREAD_UNCHANGED );
+    cv::Mat img_in_matrix = cv::imread( img_in_path, cv::IMREAD_UNCHANGED );
     auto rows = img_in_matrix.rows;
     auto cols = img_in_matrix.cols;
 
@@ -315,7 +325,7 @@ int main( int argc , char **argv )
 
     //---- Threads distribution
     // grid block
-    dim3 block( 32, 4 );
+    dim3 block( blockX, blockY );
     // grid for non-shared memory processing
     dim3 grid0( (cols - 1) / block.x + 1, (rows - 1) / block.y + 1 );
     // grid for shared memory processing
@@ -326,24 +336,22 @@ int main( int argc , char **argv )
     initCudaChrono( &start, &stop );
 
     //---- Launch image processing loop
-    for( int i = 0 ; i < filtersEnabled->size() ; ++i )
+    for( int i = 0 ; i < filtersEnabled.size() ; ++i )
     {
         // init convolution matrix and divider according to the filter selected
         char * conv_matrix_h, *conv_matrix_d;
-
         cudaMallocHost( &conv_matrix_h, sizeof(char)*9 );
-
-        init_conv_matrix_h( filtersEnabled->at(i), conv_matrix_h );
+        init_conv_matrix_h( filtersEnabled.at(i), conv_matrix_h );
         cudaMalloc( &conv_matrix_d, sizeof(char)*9 );
         cudaMemcpy( conv_matrix_d, conv_matrix_h, sizeof(char)*9, cudaMemcpyHostToDevice );
 
-        int divider = init_divider( filtersEnabled->at(i) );
+        int divider = init_divider( filtersEnabled.at(i) );
 
         // apply the filter how many passes wished
-        for( int j = 0 ; j < passNumber->at(i) ; ++j )
+        for( int j = 0 ; j < passNumber.at(i) ; ++j )
         {
             recordCudaChrono( &start );
-            if( !*useShared )
+            if( !useShared )
             {
                 image_processing<<< grid0, block >>>( rgb_d, result_d, cols, rows, conv_matrix_d, divider );
 
@@ -380,7 +388,7 @@ int main( int argc , char **argv )
     cudaMemcpy( img_out_h, result_d, 3 * rows * cols, cudaMemcpyDeviceToHost );
 
     //---- Write img_out onto the disk
-    cv::imwrite( cv::String(*img_out_path), img_out_matrix );
+    cv::imwrite( cv::String(img_out_path), img_out_matrix );
 
     //---- Free memory
     // host-side
