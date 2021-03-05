@@ -144,6 +144,19 @@ void init_gaussian_blur_matrix( char * conv_matrix_h )
     conv_matrix_h[8] = 1;
 }
 
+void init_emboss_matrix( char * conv_matrix_h )
+{
+    conv_matrix_h[0] = -2;
+    conv_matrix_h[1] = -1;
+    conv_matrix_h[2] = 0;
+    conv_matrix_h[3] = -1;
+    conv_matrix_h[4] = 1;
+    conv_matrix_h[5] = 1;
+    conv_matrix_h[6] = 0;
+    conv_matrix_h[7] = 1;
+    conv_matrix_h[8] = 2;
+}
+
 void init_conv_matrix_h( std::string filter, char * conv_matrix_h )
 {
     if( filter.compare("edgedetection") == 0 )
@@ -161,6 +174,10 @@ void init_conv_matrix_h( std::string filter, char * conv_matrix_h )
     else if( filter.compare("gaussianblur") == 0 )
     {
         init_gaussian_blur_matrix( conv_matrix_h );
+    }
+    else if( filter.compare("emboss") == 0 )
+    {
+        init_emboss_matrix( conv_matrix_h );
     }
     else
     {
