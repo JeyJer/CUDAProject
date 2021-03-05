@@ -232,9 +232,9 @@ __global__ void image_processing(unsigned char* rgb, unsigned char* s, std::size
     auto j = blockIdx.y * blockDim.y + threadIdx.y;
 
     int matrix[3][3] = {
-      { 1, 2, 1 },
-      { 2, 4, 2 },
-      { 1, 2, 1 }
+      { -1, -1, -1 },
+      { -1,  8, -1 },
+      { -1, -1, -1 }
     };
 
     if (i > 0 && i < cols && j > 0 && j < rows)
@@ -280,9 +280,9 @@ __global__ void image_processing_shared(unsigned char* rgb, unsigned char* s, st
     __syncthreads();
 
     int matrix[3][3] = {
-      { 1, 2, 1 },
-      { 2, 4, 2 },
-      { 1, 2, 1 }
+      { -1, -1, -1 },
+      { -1,  8, -1 },
+      { -1, -1, -1 }
     };
 
     if (i_global < cols - 1 && j_global < rows - 1 && i > 0 && i < (w - 1) && j > 0 && j < (height - 1))
@@ -351,7 +351,11 @@ int main( int argc , char **argv )
     //---- Threads distribution
     // grid block
     dim3 block( 32, 4 );
-    // grid for non-shared memory processing
+    // grid for non-shared memory processingint matrix[3][3] = {
+      { 1, 2, 1 },
+      { 2, 4, 2 },
+      { 1, 2, 1 }
+    };
     dim3 grid0( (cols - 1) / block.x + 1, (rows - 1) / block.y + 1 );
     // grid for shared memory processing
     dim3 grid1( (cols - 1) / (block.x - 2) + 1, (rows - 1) / (block.y - 2) + 1 );
