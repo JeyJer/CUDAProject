@@ -43,6 +43,8 @@ void initParameters( std::string * img_in_path, std::string * img_out_path,
     std::cout << std::endl;
 
     printParameters( "• CUDA Options :", "", false );
+    printParameters( "Block dim X :", " "+std::to_string(*blockX), true );
+    printParameters( "Block dim Y :", " "+std::to_string(*blockY), true );
     printParameters( "Memory Shared enabled ?", ((*useShared) ? " Yes" : " No"), true );
     if( *streamNbr > 0 )
         printParameters( "Streams enabled :", " "+std::to_string(*streamNbr), true );
