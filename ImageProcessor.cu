@@ -106,8 +106,8 @@ __global__ void flou_shared(unsigned char* rgb, unsigned char* s, std::size_t co
 
 int main()
 {
-    auto img_out = "./out.jpg";
-    auto img_in = "./in.jpg";
+    auto img_out = "/mnt/data/tsky-19/eclipsec/CUDAProject_branch1/out.jpg";
+    auto img_in = "/mnt/data/tsky-19/eclipsec/CUDAProject_branch1/in.jpg";
 
     cv::Mat m_in = cv::imread(img_in, cv::IMREAD_UNCHANGED);
 
@@ -130,14 +130,28 @@ int main()
     std::memcpy(rgb, m_in.data, 3 * rows * cols);
 
     unsigned char* rgb_d;
-    unsigned char* g_d;
     unsigned char* s_d;
 
     cudaMalloc(&rgb_d, 3 * rows * cols);
-    cudaMalloc(&g_d, 3 * rows * cols);
     cudaMalloc(&s_d, 3 * rows * cols);
 
-    cudaMemcpy(rgb_d, rgb, 3 * rows * cols, cudaMemcpyHostToDevice);
+    cudaStream_t streams[ 2 ];
+
+    for( std::size_t i = 0 ; i < 2 ; ++i ) cudaStreamCreate( &streams[ i ] );
+
+    int size = 3 * rows * cols;
+    int size_bytes = size * (int)sizeof(unsigned char) ;
+
+    int i = 0;
+    cudaMemcpyAsync( rgb_d, rgb, size_bytes/2 + 3 * cols, cudaMemcpyHostToDevice, streams[ i ] );
+
+    i++;
+    cudaMemcpyAsync( rgb_d + 3 * rows * cols /2, rgb + 3 * rows * cols /2, size_bytes/2, cudaMemcpyHostToDevice, streams[ i ] );
+   // for( std::size_t i = 0 ; i < 2 ; ++i ){
+    //    cudaMemcpyAsync( rgb_d + i * 3 * rows * cols /2 - 3 * cols, rgb + i * 3 * rows * cols /2 - 3 * cols, size_bytes/2, cudaMemcpyHostToDevice, streams[ i ] );
+    //}
+
+    // cudaMemcpy(rgb_d, rgb, 3 * rows * cols, cudaMemcpyHostToDevice);
 
     dim3 block(32, 4);
     dim3 grid0((cols - 1) / block.x + 1, (rows - 1) / block.y + 1);
@@ -180,15 +194,39 @@ int main()
      */
 
 
-    flou_shared<<< grid1, block, 3 * block.x * block.y >>>( rgb_d, s_d, cols, rows );
+    dim3 grid2((cols - 1) / (block.x - 2) + 1, (rows - 1) / (block.y - 2) + 1);
 
 
+    for( std::size_t i = 0 ; i < 2 ; ++i )
+    {
+        flou_shared<<< grid2, block, 3 * block.x * block.y, streams[ i ] >>>( rgb_d + i * size/2, s_d + i * size/2, cols, rows/2 );
+    }
+
+    // flou_shared<<< grid1, block, 3 * block.x * block.y >>>( rgb_d, s_d, cols, rows );
+
+    cudaMemcpyAsync( g + size/2 -  3 * cols, s_d + size/2, size_bytes/2, cudaMemcpyDeviceToHost, streams[ 1 ] );
+    cudaMemcpyAsync( g , s_d , size_bytes/2 +  3 * cols, cudaMemcpyDeviceToHost, streams[ 0 ] );
+
+
+    // for( std::size_t i = 0 ; i < 2 ; ++i )
+    // {
+    //    cudaMemcpyAsync( g + i*size/2, s_d + i * size/2, size_bytes/2, cudaMemcpyDeviceToHost, streams[ i ] );
+    // }
+
+    cudaDeviceSynchronize();
 
     cudaEventRecord(stop);
 
-    cudaMemcpy(g, s_d, 3 * rows * cols, cudaMemcpyDeviceToHost);
+    // cudaMemcpy(g, s_d, 3 * rows * cols, cudaMemcpyDeviceToHost);
+
 
     cudaEventSynchronize(stop);
+
+    for( std::size_t i = 0 ; i < 2 ; ++i )
+    {
+        cudaStreamDestroy( streams[ i ] );
+    }
+
     float duration;
     cudaEventElapsedTime(&duration, start, stop);
     std::cout << "time=" << duration << std::endl;
@@ -199,7 +237,6 @@ int main()
     cv::imwrite(img_out, m_out);
 
     cudaFree(rgb_d);
-    cudaFree(g_d);
     cudaFree(s_d);
 
     cudaFreeHost(g);
