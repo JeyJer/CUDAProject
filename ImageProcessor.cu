@@ -165,6 +165,7 @@ char ** init_conv_matrix( std::string filter )
     }
     else if( filter.compare("boxblur") )
     {
+        std::cout << "Return boxblur" << std::endl;
         return init_box_blur_matrix();
     }
     else if( filter.compare("gaussianblur") )
