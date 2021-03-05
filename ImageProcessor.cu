@@ -216,8 +216,8 @@ int main()
 
     for( std::size_t i = 0 ; i < NBSTREAM ; ++i )
     {
-        cudaMemcpyAsync( g + i * (size/NBSTREAM - 3 * cols), s_d + i * (size / NBSTREAM) + 3 * cols,
-                size_bytes/NBSTREAM - 3 * cols * sizeof(unsigned char), cudaMemcpyDeviceToHost, streams[ i ] );
+        cudaMemcpyAsync( g + i * (size/NBSTREAM - 6 * cols), s_d + i * (size / NBSTREAM) + 3 * cols,
+                size_bytes/NBSTREAM - 6 * cols * sizeof(unsigned char), cudaMemcpyDeviceToHost, streams[ i ] );
 
     }
 
