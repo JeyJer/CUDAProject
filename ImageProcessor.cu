@@ -187,11 +187,11 @@ void init_conv_matrix_h( std::string filter, char * conv_matrix_h )
 
 //---- POINTER MANIPULATION ----
 
-void invert_pointer( unsigned char * ptr1, unsigned char * ptr2 )
+void invert_pointer( unsigned char ** ptr1, unsigned char ** ptr2 )
 {
-    unsigned char* invertion_ptr = ptr1;
-    ptr1 = ptr2;
-    ptr2 = invertion_ptr;
+    unsigned char* invertion_ptr = *ptr1;
+    *ptr1 = *ptr2;
+    *ptr2 = invertion_ptr;
 }
 
 //----------------
@@ -230,12 +230,6 @@ __global__ void image_processing(unsigned char* rgb, unsigned char* s, std::size
 {
     auto i = blockIdx.x * blockDim.x + threadIdx.x;
     auto j = blockIdx.y * blockDim.y + threadIdx.y;
-
-    printf( "Adress of rgb_d : %p\n", rgb);
-    printf( "Adress of s_d : %p\n", rgb);
-
-    printf( "Matrix : {\n{ %i, %i, %i },\n{ %i, %i, %i },\n{ %i, %i, %i }\n}\n",
-        matrix[0], matrix[1], matrix[2], matrix[3], matrix[4], matrix[5], matrix[6], matrix[7], matrix[8] );
 
     if (i > 0 && i < cols && j > 0 && j < rows)
     {
@@ -394,14 +388,14 @@ int main( int argc , char **argv )
             // TODO Do something with duration
 
             // invert rgb_d with result_d, for any other pass
-            invert_pointer( rgb_d, result_d );
+            invert_pointer( &rgb_d, &result_d );
         }
         // TODO free matrix here
         cudaFreeHost( conv_matrix_h );
         cudaFree( conv_matrix_d );
     }
     // cancel the rgb_d and result_d invertion, to put back the result in result_d
-    invert_pointer( rgb_d, result_d );
+    invert_pointer( &rgb_d, &result_d );
 
     //---- Copy the result to cv::Mat
     cudaMemcpy( img_out_h, result_d, 3 * rows * cols, cudaMemcpyDeviceToHost );
