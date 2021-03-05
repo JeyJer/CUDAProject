@@ -339,6 +339,11 @@ int main( int argc , char **argv )
         cudaMemcpy( conv_matrix_d, conv_matrix_h, sizeof(char)*9, cudaMemcpyHostToDevice );
 
         int divider = init_divider( filtersEnabled->at(i) );
+        int * divider_d;
+        int * divider_h = new int;
+        *divider_h = 16;
+        cudaMalloc( &divider_d, sizeof(int) );
+        cudaMemcpy( divider_d, divider_h, sizeof(int), cudaMemcpyHostToDevice );
 
         // apply the filter how many passes wished
         for( int j = 0 ; j < passNumber->at(i) ; ++j )
@@ -346,7 +351,7 @@ int main( int argc , char **argv )
             recordCudaChrono( &start );
             if( !*useShared )
             {
-                image_processing<<< grid0, block >>>( rgb_d, result_d, cols, rows, conv_matrix_d, divider );
+                image_processing<<< grid0, block >>>( rgb_d, result_d, cols, rows, conv_matrix_d, divider_d );
 
                 cudaDeviceSynchronize();
                 cudaError err = cudaGetLastError();
@@ -355,7 +360,7 @@ int main( int argc , char **argv )
             }
             else
             {
-                image_processing_shared<<< grid1, block, 3 * block.x * block.y >>>( rgb_d, result_d, cols, rows, conv_matrix_d, divider );
+                image_processing_shared<<< grid1, block, 3 * block.x * block.y >>>( rgb_d, result_d, cols, rows, conv_matrix_d, divider_d );
 
                 cudaDeviceSynchronize();
                 cudaError err = cudaGetLastError();
