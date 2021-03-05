@@ -173,7 +173,6 @@ __device__ char ** init_conv_matrix( std::string filter )
     }
     else
     {
-        std::cout << "The filter " << filter << " is unknowned." << std::endl;
         return nullptr;
     }
 }
