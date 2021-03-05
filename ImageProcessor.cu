@@ -371,6 +371,16 @@ int main( int argc , char **argv )
             {
                 std::cout << "[" << filtersEnabled->at(i) << "] " << "Non-shared processing" << std::endl;
                 image_processing<<< grid0, block >>>( rgb_d, result_d, cols, rows, conv_matrix, divider );
+                cudaDeviceSynchronize();
+                cudaError err = cudaGetLastError();
+                if( err != cudaSuccess )
+                {
+                    std::cerr << cudaGetErrorString( err ) << std::endl;
+                }
+                else
+                {
+                    std::cout << "ALL IS GOOD PUTAIN" << std::endl;
+                }
             }
             else
             {
