@@ -155,25 +155,20 @@ char ** init_gaussian_blur_matrix()
 
 char ** init_conv_matrix( std::string filter )
 {
-    std::cout << "************** " << filter << std::endl;
     if( filter.compare("edgedetection") == 0 )
     {
-        std::cout << "Return edgedetection" << std::endl;
         return init_edge_detection_matrix();
     }
     else if( filter.compare("sharpen") == 0 )
     {
-        std::cout << "Return sharpen" << std::endl;
         return init_sharpen_matrix();
     }
     else if( filter.compare("boxblur") == 0 )
     {
-        std::cout << "Return boxblur" << std::endl;
         return init_box_blur_matrix();
     }
     else if( filter.compare("gaussianblur") == 0 )
     {
-        std::cout << "Return gaussianblur" << std::endl;
         return init_gaussian_blur_matrix();
     }
     else
@@ -279,19 +274,6 @@ __global__ void image_processing_shared(unsigned char* rgb, unsigned char* s, st
 
     __syncthreads();
 
-    /*
-     * int matrix[3][3] = {
-      { 1, 2, 1 },
-      { 2, 4, 2 },
-      { 1, 2, 1 }
-    };
-    char matrix[3][3] = {
-            { 1, 1, 1 },
-            { 1, 1, 1 },
-            { 1, 1, 1 }
-    };*/
-
-
     if (i_global < cols - 1 && j_global < rows - 1 && i > 0 && i < (w - 1) && j > 0 && j < (height - 1))
     {
         auto h_r = matrix[0][0] * sh[3 * ((j - 1) * w + i - 1)] + matrix[0][1] * sh[3 * ((j - 1) * w + i)] + matrix[0][2] * sh[3 * ((j - 1) * w + i + 1)]
@@ -374,15 +356,15 @@ int main( int argc , char **argv )
         char ** conv_matrix = init_conv_matrix( filtersEnabled->at(i) );
         if( conv_matrix == nullptr ) continue;
 
-        std::cout << "matrix[0][0] = " << (int)conv_matrix[0][0] << std::endl;
-        /*std::cout << "matrix[0][1] = " << 48+init_conv_matrix[0][1] << std::endl;
-        std::cout << "matrix[0][2] = " << 48init_conv_matrix[0][2] << std::endl;
-        std::cout << "matrix[1][0] = " << 48init_conv_matrix[1][0] << std::endl;
-        std::cout << "matrix[1][1] = " << 48init_conv_matrix[1][1] << std::endl;
-        std::cout << "matrix[1][2] = " << 48init_conv_matrix[1][2] << std::endl;
-        std::cout << "matrix[2][0] = " << 48init_conv_matrix[2][0] << std::endl;
-        std::cout << "matrix[2][1] = " << 48init_conv_matrix[2][1] << std::endl;
-        std::cout << "matrix[2][2] = " << 48init_conv_matrix[2][2] << std::endl;*/
+        std::cout << "matrix[][0] = " << (int)conv_matrix[0][0] << std::endl;
+        std::cout << "matrix[][1] = " << (int)conv_matrix[0][1] << std::endl;
+        std::cout << "matrix[][2] = " << (int)conv_matrix[0][2] << std::endl;
+        std::cout << "matrix[][0] = " << (int)conv_matrix[0][0] << std::endl;
+        std::cout << "matrix[][1] = " << (int)conv_matrix[0][1] << std::endl;
+        std::cout << "matrix[][2] = " << (int)conv_matrix[0][2] << std::endl;
+        std::cout << "matrix[][0] = " << (int)conv_matrix[0][0] << std::endl;
+        std::cout << "matrix[][1] = " << (int)conv_matrix[0][1] << std::endl;
+        std::cout << "matrix[][2] = " << (int)conv_matrix[0][2] << std::endl;
 
         int divider = init_divider( filtersEnabled->at(i) );
 
