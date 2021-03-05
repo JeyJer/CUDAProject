@@ -335,6 +335,7 @@ int main( int argc , char **argv )
     cudaMalloc( &rgb_d, 3 * rows * cols );
     cudaMalloc( &result_d, 3 * rows * cols );
     cudaMemcpy( rgb_d, rgb, 3 * rows * cols, cudaMemcpyHostToDevice );
+    std::cout << "rgb_d[0] = " << (int)rgb_d[0] << std::endl;
 
     //---- Threads distribution
     // grid block
@@ -369,8 +370,6 @@ int main( int argc , char **argv )
             {
                 std::cout << "[" << filtersEnabled->at(i) << "] " << "Non-shared processing" << std::endl;
                 image_processing<<< grid0, block >>>( rgb_d, result_d, cols, rows, conv_matrix, divider );
-                std::cout << "rgb_d[0] = " << (int)rgb_d[0] << std::endl;
-                std::cout << "result_d[0] = " << (int)result_d[0] << std::endl;
             }
             else
             {
@@ -397,6 +396,7 @@ int main( int argc , char **argv )
 
     //---- Copy the result to cv::Mat
     std::cout << "[AFTER_PROCESSING] " << "Memcpy" << std::endl;
+    std::cout << "result_d[0] = " << (int)result_d[0] << std::endl;
     cudaMemcpy( img_out_h, result_d, 3 * rows * cols, cudaMemcpyDeviceToHost );
 
     //---- Write img_out onto the disk
