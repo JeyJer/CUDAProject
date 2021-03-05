@@ -143,7 +143,7 @@ int main()
     int size_bytes = size * (int)sizeof(unsigned char) ;
 
     int i = 0;
-    cudaMemcpyAsync( rgb_d, rgb, size_bytes/2 + 3 * cols, cudaMemcpyHostToDevice, streams[ i ] );
+    cudaMemcpyAsync( rgb_d, rgb, size_bytes/2, cudaMemcpyHostToDevice, streams[ i ] );
 
     i++;
     cudaMemcpyAsync( rgb_d + 3 * rows * cols /2, rgb + 3 * rows * cols /2, size_bytes/2, cudaMemcpyHostToDevice, streams[ i ] );
@@ -204,8 +204,9 @@ int main()
 
     // flou_shared<<< grid1, block, 3 * block.x * block.y >>>( rgb_d, s_d, cols, rows );
 
-    cudaMemcpyAsync( g + size/2 -  3 * cols, s_d + size/2, size_bytes/2, cudaMemcpyDeviceToHost, streams[ 1 ] );
-    cudaMemcpyAsync( g , s_d , size_bytes/2 +  3 * cols, cudaMemcpyDeviceToHost, streams[ 0 ] );
+    cudaMemcpyAsync( g , s_d, size_bytes/2 - 3 * cols, cudaMemcpyDeviceToHost, streams[ 0 ] );
+    cudaMemcpyAsync( g + size/2 - 3 * cols, s_d + size/2 + 3 * cols, size_bytes/2 - 3 * cols, cudaMemcpyDeviceToHost, streams[ 1 ] );
+
 
 
     // for( std::size_t i = 0 ; i < 2 ; ++i )
