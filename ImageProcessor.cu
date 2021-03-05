@@ -360,6 +360,7 @@ int main( int argc , char **argv )
         // Jusqu'ici c'est bon quoi !
 
         int divider = init_divider( filtersEnabled->at(i) );
+        std::cout << divider << std::endl;
 
         // apply the filter how many passes wished
         std::cout << "[" << filtersEnabled->at(i) << "] " << "Apply filters" << std::endl;
