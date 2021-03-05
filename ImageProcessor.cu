@@ -252,7 +252,7 @@ __global__ void image_processing(unsigned char* rgb, unsigned char* s, std::size
         s[3 * (j * cols + i) + 2] = (h_b / divider);
     }
 
-    free_conv_matrix( conv_matrix );
+    free_conv_matrix( matrix );
 }
 
 __global__ void image_processing_shared(unsigned char* rgb, unsigned char* s, std::size_t cols, std::size_t rows, std::string filter, int divider)
@@ -298,7 +298,7 @@ __global__ void image_processing_shared(unsigned char* rgb, unsigned char* s, st
         s[3 * (j_global * cols + i_global) + 2] = (h_b / divider);
     }
 
-    free_conv_matrix( conv_matrix );
+    free_conv_matrix( matrix );
 }
 
 //----------------
