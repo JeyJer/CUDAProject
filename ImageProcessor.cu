@@ -293,7 +293,8 @@ int main( int argc , char **argv )
     std::string img_in_path, img_out_path;
     int blockX, blockY, streamNbr;
     bool useShared;
-    std::vector<std::string> filtersEnabled, passNumber;
+    std::vector<std::string> filtersEnabled;
+    std::vector<std::int> passNumber;
 
     //---- Initialize parameters
     // RELEASE_MODE
