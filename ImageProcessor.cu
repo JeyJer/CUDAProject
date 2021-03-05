@@ -77,103 +77,87 @@ int init_divider( std::string filter )
     }
 }
 
-__device__ char ** init_edge_detection_matrix()
+void init_edge_detection_matrix( char * conv_matrix_h )
 {
-    char ** conv_matrix = new char*[ 3 ];
-    for( int i = 0; i < 3; ++i )
-        conv_matrix[ i ]  = new char[ 3 ];
+    cudaMallocHost( &conv_matrix_h, sizeof(char)*9 );
 
-    conv_matrix[0][0] = -1;
-    conv_matrix[0][1] = -1;
-    conv_matrix[0][2] = -1;
-    conv_matrix[1][0] = -1;
-    conv_matrix[1][1] = 8;
-    conv_matrix[1][2] = -1;
-    conv_matrix[2][0] = -1;
-    conv_matrix[2][1] = -1;
-    conv_matrix[2][2] = -1;
-
-    return conv_matrix;
+    conv_matrix[0] = -1;
+    conv_matrix[1] = -1;
+    conv_matrix[2] = -1;
+    conv_matrix[3] = -1;
+    conv_matrix[4] = 8;
+    conv_matrix[5] = -1;
+    conv_matrix[6] = -1;
+    conv_matrix[7] = -1;
+    conv_matrix[8] = -1;
 }
 
-__device__ char ** init_sharpen_matrix()
+void init_sharpen_matrix( char * conv_matrix_h )
 {
-    char ** conv_matrix = new char*[ 3 ];
-    for( int i = 0; i < 3; ++i )
-        conv_matrix[ i ]  = new char[ 3 ];
+    cudaMallocHost( &conv_matrix_h, sizeof(char)*9 );
 
-    conv_matrix[0][0] = 0;
-    conv_matrix[0][1] = -1;
-    conv_matrix[0][2] = 0;
-    conv_matrix[1][0] = -1;
-    conv_matrix[1][1] = 5;
-    conv_matrix[1][2] = -1;
-    conv_matrix[2][0] = 0;
-    conv_matrix[2][1] = -1;
-    conv_matrix[2][2] = 0;
-
-    return conv_matrix;
+    conv_matrix[0] = 0;
+    conv_matrix[1] = -1;
+    conv_matrix[2] = 0;
+    conv_matrix[3] = -1;
+    conv_matrix[4] = 5;
+    conv_matrix[5] = -1;
+    conv_matrix[6] = 0;
+    conv_matrix[7] = -1;
+    conv_matrix[8] = 0;
 }
 
-__device__ char ** init_box_blur_matrix()
+void init_box_blur_matrix( char * conv_matrix_h )
 {
-    char ** conv_matrix = new char*[ 3 ];
-    for( int i = 0; i < 3; ++i )
-        conv_matrix[ i ]  = new char[ 3 ];
+    cudaMallocHost( &conv_matrix_h, sizeof(char)*9 );
 
-    conv_matrix[0][0] = 1;
-    conv_matrix[0][1] = 1;
-    conv_matrix[0][2] = 1;
-    conv_matrix[1][0] = 1;
-    conv_matrix[1][1] = 1;
-    conv_matrix[1][2] = 1;
-    conv_matrix[2][0] = 1;
-    conv_matrix[2][1] = 1;
-    conv_matrix[2][2] = 1;
-
-    return conv_matrix;
+    conv_matrix[0] = 1;
+    conv_matrix[1] = 1;
+    conv_matrix[2] = 1;
+    conv_matrix[3] = 1;
+    conv_matrix[4] = 1;
+    conv_matrix[5] = 1;
+    conv_matrix[6] = 1;
+    conv_matrix[7] = 1;
+    conv_matrix[8] = 1;
 }
 
-__device__ char ** init_gaussian_blur_matrix()
+void init_gaussian_blur_matrix( char * conv_matrix_h )
 {
-    char ** conv_matrix = new char*[ 3 ];
-    for( int i = 0; i < 3; ++i )
-        conv_matrix[ i ]  = new char[ 3 ];
+    cudaMallocHost( &conv_matrix_h, sizeof(char)*9 );
 
-    conv_matrix[0][0] = 1;
-    conv_matrix[0][1] = 2;
-    conv_matrix[0][2] = 1;
-    conv_matrix[1][0] = 2;
-    conv_matrix[1][1] = 4;
-    conv_matrix[1][2] = 2;
-    conv_matrix[2][0] = 1;
-    conv_matrix[2][1] = 2;
-    conv_matrix[2][2] = 1;
-
-    return conv_matrix;
+    conv_matrix[0] = 1;
+    conv_matrix[1] = 2;
+    conv_matrix[2] = 1;
+    conv_matrix[3] = 2;
+    conv_matrix[4] = 4;
+    conv_matrix[5] = 2;
+    conv_matrix[6] = 1;
+    conv_matrix[7] = 2;
+    conv_matrix[8] = 1;
 }
 
-__device__ char ** init_conv_matrix( std::string filter )
+void init_conv_matrix_h( std::string filter, char * conv_matrix_h )
 {
     if( filter.compare("edgedetection") == 0 )
     {
-        return init_edge_detection_matrix();
+        init_edge_detection_matrix( conv_matrix_h );
     }
     else if( filter.compare("sharpen") == 0 )
     {
-        return init_sharpen_matrix();
+        init_sharpen_matrix( conv_matrix_h );
     }
     else if( filter.compare("boxblur") == 0 )
     {
-        return init_box_blur_matrix();
+        init_box_blur_matrix( conv_matrix_h );
     }
     else if( filter.compare("gaussianblur") == 0 )
     {
-        return init_gaussian_blur_matrix();
+        init_gaussian_blur_matrix( conv_matrix_h );
     }
     else
     {
-        return nullptr;
+        conv_matrix_h = nullptr;
     }
 }
 
@@ -186,7 +170,7 @@ void invert_pointer( unsigned char * ptr1, unsigned char * ptr2 )
     ptr2 = invertion_ptr;
 }
 
-__device__ void free_conv_matrix( char ** array )
+void free_conv_matrix( char ** array )
 {
     for( int i = 0 ; i < 3 ; i++ )
         delete[] array[i];
@@ -225,36 +209,32 @@ void destroyCudaChrono( cudaEvent_t * start, cudaEvent_t * stop )
 
 //---- PROCESSING ----
 
-__global__ void image_processing(unsigned char* rgb, unsigned char* s, std::size_t cols, std::size_t rows, std::string filter, int divider )
+__global__ void image_processing(unsigned char* rgb, unsigned char* s, std::size_t cols, std::size_t rows, char * matrix, int divider )
 {
     auto i = blockIdx.x * blockDim.x + threadIdx.x;
     auto j = blockIdx.y * blockDim.y + threadIdx.y;
 
-    char ** matrix = init_conv_matrix( filter );
-
     if (i > 0 && i < cols && j > 0 && j < rows)
     {
-        auto h_r = matrix[0][0] * rgb[3 * ((j - 1) * cols + i - 1)] + matrix[0][1] * rgb[3 * ((j - 1) * cols + i)] + matrix[0][2] * rgb[3 * ((j - 1) * cols + i + 1)]
-                 + matrix[1][0] * rgb[3 * ((j    ) * cols + i - 1)] + matrix[1][1] * rgb[3 * ((j    ) * cols + i)] + matrix[1][2] * rgb[3 * ((j    ) * cols + i + 1)]
-                 + matrix[2][0] * rgb[3 * ((j + 1) * cols + i - 1)] + matrix[2][1] * rgb[3 * ((j + 1) * cols + i)] + matrix[2][2] * rgb[3 * ((j + 1) * cols + i + 1)];
+        auto h_r = matrix[0] * rgb[3 * ((j - 1) * cols + i - 1)] + matrix[1] * rgb[3 * ((j - 1) * cols + i)] + matrix[2] * rgb[3 * ((j - 1) * cols + i + 1)]
+                 + matrix[3] * rgb[3 * ((j    ) * cols + i - 1)] + matrix[4] * rgb[3 * ((j    ) * cols + i)] + matrix[5] * rgb[3 * ((j    ) * cols + i + 1)]
+                 + matrix[6] * rgb[3 * ((j + 1) * cols + i - 1)] + matrix[7] * rgb[3 * ((j + 1) * cols + i)] + matrix[8] * rgb[3 * ((j + 1) * cols + i + 1)];
 
-        auto h_g = matrix[0][0] * rgb[3 * ((j - 1) * cols + i - 1) + 1] + matrix[0][1] * rgb[3 * ((j - 1) * cols + i) + 1] + matrix[0][2] * rgb[3 * ((j - 1) * cols + i + 1) + 1]
-                 + matrix[1][0] * rgb[3 * ((j    ) * cols + i - 1) + 1] + matrix[1][1] * rgb[3 * ((j    ) * cols + i) + 1] + matrix[1][2] * rgb[3 * ((j    ) * cols + i + 1) + 1]
-                 + matrix[2][0] * rgb[3 * ((j + 1) * cols + i - 1) + 1] + matrix[2][1] * rgb[3 * ((j + 1) * cols + i) + 1] + matrix[2][2] * rgb[3 * ((j + 1) * cols + i + 1) + 1];
+        auto h_g = matrix[0] * rgb[3 * ((j - 1) * cols + i - 1) + 1] + matrix[1] * rgb[3 * ((j - 1) * cols + i) + 1] + matrix[2] * rgb[3 * ((j - 1) * cols + i + 1) + 1]
+                 + matrix[3] * rgb[3 * ((j    ) * cols + i - 1) + 1] + matrix[4] * rgb[3 * ((j    ) * cols + i) + 1] + matrix[5] * rgb[3 * ((j    ) * cols + i + 1) + 1]
+                 + matrix[6] * rgb[3 * ((j + 1) * cols + i - 1) + 1] + matrix[7] * rgb[3 * ((j + 1) * cols + i) + 1] + matrix[8] * rgb[3 * ((j + 1) * cols + i + 1) + 1];
 
-        auto h_b = matrix[0][0] * rgb[3 * ((j - 1) * cols + i - 1) + 2] + matrix[0][1] * rgb[3 * ((j - 1) * cols + i) + 2] + matrix[0][2] * rgb[3 * ((j - 1) * cols + i + 1) + 2]
-                 + matrix[1][0] * rgb[3 * ((j    ) * cols + i - 1) + 2] + matrix[1][1] * rgb[3 * ((j    ) * cols + i) + 2] + matrix[1][2] * rgb[3 * ((j    ) * cols + i + 1) + 2]
-                 + matrix[2][0] * rgb[3 * ((j + 1) * cols + i - 1) + 2] + matrix[2][1] * rgb[3 * ((j + 1) * cols + i) + 2] + matrix[2][2] * rgb[3 * ((j + 1) * cols + i + 1) + 2];
+        auto h_b = matrix[0] * rgb[3 * ((j - 1) * cols + i - 1) + 2] + matrix[1] * rgb[3 * ((j - 1) * cols + i) + 2] + matrix[2] * rgb[3 * ((j - 1) * cols + i + 1) + 2]
+                 + matrix[3] * rgb[3 * ((j    ) * cols + i - 1) + 2] + matrix[4] * rgb[3 * ((j    ) * cols + i) + 2] + matrix[5] * rgb[3 * ((j    ) * cols + i + 1) + 2]
+                 + matrix[6] * rgb[3 * ((j + 1) * cols + i - 1) + 2] + matrix[7] * rgb[3 * ((j + 1) * cols + i) + 2] + matrix[8] * rgb[3 * ((j + 1) * cols + i + 1) + 2];
 
         s[3 * (j * cols + i)    ] = (h_r / divider);
         s[3 * (j * cols + i) + 1] = (h_g / divider);
         s[3 * (j * cols + i) + 2] = (h_b / divider);
     }
-
-    free_conv_matrix( matrix );
 }
 
-__global__ void image_processing_shared(unsigned char* rgb, unsigned char* s, std::size_t cols, std::size_t rows, std::string filter, int divider)
+__global__ void image_processing_shared(unsigned char* rgb, unsigned char* s, std::size_t cols, std::size_t rows, char * matrix, int divider)
 {
     auto i_global = blockIdx.x * (blockDim.x - 2) + threadIdx.x;
     auto j_global = blockIdx.y * (blockDim.y - 2) + threadIdx.y;
@@ -276,28 +256,24 @@ __global__ void image_processing_shared(unsigned char* rgb, unsigned char* s, st
 
     __syncthreads();
 
-    char ** matrix = init_conv_matrix( filter );
-
     if (i_global < cols - 1 && j_global < rows - 1 && i > 0 && i < (w - 1) && j > 0 && j < (height - 1))
     {
-        auto h_r = matrix[0][0] * sh[3 * ((j - 1) * w + i - 1)] + matrix[0][1] * sh[3 * ((j - 1) * w + i)] + matrix[0][2] * sh[3 * ((j - 1) * w + i + 1)]
-                 + matrix[1][0] * sh[3 * ((j    ) * w + i - 1)] + matrix[1][1] * sh[3 * ((j    ) * w + i)] + matrix[1][2] * sh[3 * ((j    ) * w + i + 1)]
-                 + matrix[2][0] * sh[3 * ((j + 1) * w + i - 1)] + matrix[2][1] * sh[3 * ((j + 1) * w + i)] + matrix[2][2] * sh[3 * ((j + 1) * w + i + 1)];
+        auto h_r = matrix[0] * sh[3 * ((j - 1) * w + i - 1)] + matrix[1] * sh[3 * ((j - 1) * w + i)] + matrix[2] * sh[3 * ((j - 1) * w + i + 1)]
+                 + matrix[3] * sh[3 * ((j    ) * w + i - 1)] + matrix[4] * sh[3 * ((j    ) * w + i)] + matrix[5] * sh[3 * ((j    ) * w + i + 1)]
+                 + matrix[6] * sh[3 * ((j + 1) * w + i - 1)] + matrix[7] * sh[3 * ((j + 1) * w + i)] + matrix[8] * sh[3 * ((j + 1) * w + i + 1)];
 
-        auto h_g = matrix[0][0] * sh[3 * ((j - 1) * w + i - 1) + 1] + matrix[0][1] * sh[3 * ((j - 1) * w + i) + 1] + matrix[0][2] * sh[3 * ((j - 1) * w + i + 1) + 1]
-                 + matrix[1][0] * sh[3 * ((j    ) * w + i - 1) + 1] + matrix[1][1] * sh[3 * ((j    ) * w + i) + 1] + matrix[1][2] * sh[3 * ((j    ) * w + i + 1) + 1]
-                 + matrix[2][0] * sh[3 * ((j + 1) * w + i - 1) + 1] + matrix[2][1] * sh[3 * ((j + 1) * w + i) + 1] + matrix[2][2] * sh[3 * ((j + 1) * w + i + 1) + 1];
+        auto h_g = matrix[0] * sh[3 * ((j - 1) * w + i - 1) + 1] + matrix[1] * sh[3 * ((j - 1) * w + i) + 1] + matrix[2] * sh[3 * ((j - 1) * w + i + 1) + 1]
+                 + matrix[3] * sh[3 * ((j    ) * w + i - 1) + 1] + matrix[4] * sh[3 * ((j    ) * w + i) + 1] + matrix[5] * sh[3 * ((j    ) * w + i + 1) + 1]
+                 + matrix[6] * sh[3 * ((j + 1) * w + i - 1) + 1] + matrix[7] * sh[3 * ((j + 1) * w + i) + 1] + matrix[8] * sh[3 * ((j + 1) * w + i + 1) + 1];
 
-        auto h_b = matrix[0][0] * sh[3 * ((j - 1) * w + i - 1) + 2] + matrix[0][1] * sh[3 * ((j - 1) * w + i) + 2] + matrix[0][2] * sh[3 * ((j - 1) * w + i + 1) + 2]
-                 + matrix[1][0] * sh[3 * ((j    ) * w + i - 1) + 2] + matrix[1][1] * sh[3 * ((j    ) * w + i) + 2] + matrix[1][2] * sh[3 * ((j    ) * w + i + 1) + 2]
-                 + matrix[2][0] * sh[3 * ((j + 1) * w + i - 1) + 2] + matrix[2][1] * sh[3 * ((j + 1) * w + i) + 2] + matrix[2][2] * sh[3 * ((j + 1) * w + i + 1) + 2];
+        auto h_b = matrix[0] * sh[3 * ((j - 1) * w + i - 1) + 2] + matrix[1] * sh[3 * ((j - 1) * w + i) + 2] + matrix[2] * sh[3 * ((j - 1) * w + i + 1) + 2]
+                 + matrix[3] * sh[3 * ((j    ) * w + i - 1) + 2] + matrix[4] * sh[3 * ((j    ) * w + i) + 2] + matrix[5] * sh[3 * ((j    ) * w + i + 1) + 2]
+                 + matrix[6] * sh[3 * ((j + 1) * w + i - 1) + 2] + matrix[7] * sh[3 * ((j + 1) * w + i) + 2] + matrix[8] * sh[3 * ((j + 1) * w + i + 1) + 2];
 
         s[3 * (j_global * cols + i_global)    ] = (h_r / divider);
         s[3 * (j_global * cols + i_global) + 1] = (h_g / divider);
         s[3 * (j_global * cols + i_global) + 2] = (h_b / divider);
     }
-
-    free_conv_matrix( matrix );
 }
 
 //----------------
@@ -358,6 +334,12 @@ int main( int argc , char **argv )
     //---- Launch image processing loop
     for( int i = 0 ; i < filtersEnabled->size() ; ++i )
     {
+        // init convolution matrix and divider according to the filter selected
+        char * conv_matrix_h, *conv_matrix_d;
+        init_conv_matrix_h( filtersEnabled->at(i), conv_matrix_h );
+        cudaMalloc( &conv_matrix_d, sizeof(char)*9 );
+        cudaMemcpy( conv_matrix_h, conv_matrix_d, sizeof(char)*9, cudaMemcpyHostToDevice );
+
         int divider = init_divider( filtersEnabled->at(i) );
         std::cout << divider << std::endl;
 
@@ -369,7 +351,7 @@ int main( int argc , char **argv )
             if( !*useShared )
             {
                 std::cout << "[" << filtersEnabled->at(i) << "] " << "Non-shared processing" << std::endl;
-                image_processing<<< grid0, block >>>( rgb_d, result_d, cols, rows, filtersEnabled->at(i), divider );
+                image_processing<<< grid0, block >>>( rgb_d, result_d, cols, rows, conv_matrix_d, divider );
                 cudaDeviceSynchronize();
                 cudaError err = cudaGetLastError();
                 if( err != cudaSuccess )
@@ -384,7 +366,7 @@ int main( int argc , char **argv )
             else
             {
                 std::cout << "[" << filtersEnabled->at(i) << "] " << "Shared processing" << std::endl;
-                image_processing_shared<<< grid1, block, 3 * block.x * block.y >>>( rgb_d, result_d, cols, rows, filtersEnabled->at(i), divider );
+                image_processing_shared<<< grid1, block, 3 * block.x * block.y >>>( rgb_d, result_d, cols, rows, conv_matrix_d, divider );
             }
             //---- get chrono time elapsed
             std::cout << "[" << filtersEnabled->at(i) << "] " << "Stop chrono" << std::endl;
