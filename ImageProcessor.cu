@@ -233,7 +233,7 @@ __global__ void image_processing(unsigned char* rgb, unsigned char* s, std::size
 
     int matrix[3][3] = {
       { -1, -1, -1 },
-      { -1,  8, -1 },
+      { -1, 8, -1 },
       { -1, -1, -1 }
     };
 
@@ -281,7 +281,7 @@ __global__ void image_processing_shared(unsigned char* rgb, unsigned char* s, st
 
     int matrix[3][3] = {
       { -1, -1, -1 },
-      { -1,  8, -1 },
+      { -1, 8, -1 },
       { -1, -1, -1 }
     };
 
@@ -351,11 +351,7 @@ int main( int argc , char **argv )
     //---- Threads distribution
     // grid block
     dim3 block( 32, 4 );
-    // grid for non-shared memory processingint matrix[3][3] = {
-      { 1, 2, 1 },
-      { 2, 4, 2 },
-      { 1, 2, 1 }
-    };
+    // grid for non-shared memory processing
     dim3 grid0( (cols - 1) / block.x + 1, (rows - 1) / block.y + 1 );
     // grid for shared memory processing
     dim3 grid1( (cols - 1) / (block.x - 2) + 1, (rows - 1) / (block.y - 2) + 1 );
