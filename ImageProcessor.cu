@@ -61,20 +61,27 @@ void presavedParameters( std::string* img_in_path, std::string* img_out_path, bo
 
 //---- FILTERS ---
 
-int init_divider( std::string filter )
+int init_divider( std::string filter, int* divider_h )
 {
+    cudaMallocHost( &divider_h, sizeof(int) );
     if( filter.compare("boxblur") == 0 )
     {
-        return 9;
+        std::memcpy( divider_h, 9, sizeof(int) );
     }
     else if( filter.compare("gaussianblur") == 0 )
     {
-        return 16;
+        std::memcpy( divider_h, 16, sizeof(int) );
     }
     else
     {
-        return 1;
+        std::memcpy( divider_h, 1, sizeof(int) );
     }
+
+    int* divider_d;
+    cudaMalloc( &divider_d, sizeof(int) );
+    cudaMemcpy( divider_d, divider_h, sizeof(int), cudaMemcpyHostToDevice );
+
+    return divider_d;
 }
 
 char ** init_edge_detection_matrix()
@@ -228,7 +235,6 @@ void destroyCudaChrono( cudaEvent_t * start, cudaEvent_t * stop )
 
 __global__ void image_processing(unsigned char* rgb, unsigned char* s, std::size_t cols, std::size_t rows, char ** matrix, int divider )
 {
-
     auto i = blockIdx.x * blockDim.x + threadIdx.x;
     auto j = blockIdx.y * blockDim.y + threadIdx.y;
 
@@ -359,8 +365,9 @@ int main( int argc , char **argv )
 
         // Jusqu'ici c'est bon quoi !
 
-        int divider = init_divider( filtersEnabled->at(i) );
-        std::cout << divider << std::endl;
+        int* divider_h = nullptr;
+        int* divider_d = init_divider( filtersEnabled->at(i), divider_h );
+        std::cout << "divider_h = " << divider_h << std::endl;
 
         // apply the filter how many passes wished
         std::cout << "[" << filtersEnabled->at(i) << "] " << "Apply filters" << std::endl;
