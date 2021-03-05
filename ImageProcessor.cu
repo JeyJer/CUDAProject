@@ -52,11 +52,11 @@ void initParameters( std::string * img_in_path, std::string * img_out_path, bool
 void presavedParameters( std::string* img_in_path, std::string* img_out_path, bool* useShared,
     std::vector<std::string>* filtersEnabled, std::vector<int> * passNumber )
 {
-    *img_in_path = "./in.jpg";
-    *img_out_path = "./out.jpg";
+    *img_in_path = "/mnt/data/tsky-19/eclipsec/CUDAProject_branch1/in.jpg";
+    *img_out_path = "/mnt/data/tsky-19/eclipsec/CUDAProject_branch1/out.jpg";
     *useShared = 0;
-    filtersEnabled->push_back( "BoxBlur" );
-    passNumber->push_back( 10 );
+    filtersEnabled->push_back( "edgedetection" );
+    passNumber->push_back( 1 );
 }
 
 //---- FILTERS ---
@@ -79,7 +79,6 @@ int init_divider( std::string filter )
 
 void init_edge_detection_matrix( char * conv_matrix_h )
 {
-    cudaMallocHost( &conv_matrix_h, sizeof(char)*9 );
 
     conv_matrix_h[0] = -1;
     conv_matrix_h[1] = -1;
@@ -94,7 +93,6 @@ void init_edge_detection_matrix( char * conv_matrix_h )
 
 void init_sharpen_matrix( char * conv_matrix_h )
 {
-    cudaMallocHost( &conv_matrix_h, sizeof(char)*9 );
 
     conv_matrix_h[0] = 0;
     conv_matrix_h[1] = -1;
@@ -109,7 +107,6 @@ void init_sharpen_matrix( char * conv_matrix_h )
 
 void init_box_blur_matrix( char * conv_matrix_h )
 {
-    cudaMallocHost( &conv_matrix_h, sizeof(char)*9 );
 
     conv_matrix_h[0] = 1;
     conv_matrix_h[1] = 1;
@@ -124,7 +121,6 @@ void init_box_blur_matrix( char * conv_matrix_h )
 
 void init_gaussian_blur_matrix( char * conv_matrix_h )
 {
-    cudaMallocHost( &conv_matrix_h, sizeof(char)*9 );
 
     conv_matrix_h[0] = 1;
     conv_matrix_h[1] = 2;
@@ -209,7 +205,7 @@ void destroyCudaChrono( cudaEvent_t * start, cudaEvent_t * stop )
 
 //---- PROCESSING ----
 
-__global__ void image_processing(unsigned char* rgb, unsigned char* s, std::size_t cols, std::size_t rows, char * matrix, int* divider )
+__global__ void image_processing(unsigned char* rgb, unsigned char* s, std::size_t cols, std::size_t rows, char * matrix, int divider )
 {
     auto i = blockIdx.x * blockDim.x + threadIdx.x;
     auto j = blockIdx.y * blockDim.y + threadIdx.y;
@@ -228,13 +224,13 @@ __global__ void image_processing(unsigned char* rgb, unsigned char* s, std::size
                  + matrix[3] * rgb[3 * ((j    ) * cols + i - 1) + 2] + matrix[4] * rgb[3 * ((j    ) * cols + i) + 2] + matrix[5] * rgb[3 * ((j    ) * cols + i + 1) + 2]
                  + matrix[6] * rgb[3 * ((j + 1) * cols + i - 1) + 2] + matrix[7] * rgb[3 * ((j + 1) * cols + i) + 2] + matrix[8] * rgb[3 * ((j + 1) * cols + i + 1) + 2];
 
-        s[3 * (j * cols + i)    ] = (h_r / *divider);
-        s[3 * (j * cols + i) + 1] = (h_g / *divider);
-        s[3 * (j * cols + i) + 2] = (h_b / *divider);
+        s[3 * (j * cols + i)    ] = (h_r / divider);
+        s[3 * (j * cols + i) + 1] = (h_g / divider);
+        s[3 * (j * cols + i) + 2] = (h_b / divider);
     }
 }
 
-__global__ void image_processing_shared(unsigned char* rgb, unsigned char* s, std::size_t cols, std::size_t rows, char * matrix, int* divider)
+__global__ void image_processing_shared(unsigned char* rgb, unsigned char* s, std::size_t cols, std::size_t rows, char * matrix, int divider)
 {
     auto i_global = blockIdx.x * (blockDim.x - 2) + threadIdx.x;
     auto j_global = blockIdx.y * (blockDim.y - 2) + threadIdx.y;
@@ -270,9 +266,9 @@ __global__ void image_processing_shared(unsigned char* rgb, unsigned char* s, st
                  + matrix[3] * sh[3 * ((j    ) * w + i - 1) + 2] + matrix[4] * sh[3 * ((j    ) * w + i) + 2] + matrix[5] * sh[3 * ((j    ) * w + i + 1) + 2]
                  + matrix[6] * sh[3 * ((j + 1) * w + i - 1) + 2] + matrix[7] * sh[3 * ((j + 1) * w + i) + 2] + matrix[8] * sh[3 * ((j + 1) * w + i + 1) + 2];
 
-        s[3 * (j_global * cols + i_global)    ] = (h_r / *divider);
-        s[3 * (j_global * cols + i_global) + 1] = (h_g / *divider);
-        s[3 * (j_global * cols + i_global) + 2] = (h_b / *divider);
+        s[3 * (j_global * cols + i_global)    ] = (h_r / divider);
+        s[3 * (j_global * cols + i_global) + 1] = (h_g / divider);
+        s[3 * (j_global * cols + i_global) + 2] = (h_b / divider);
     }
 }
 
@@ -291,9 +287,9 @@ int main( int argc , char **argv )
 
     //---- Initialize parameters
     // RELEASE_MODE
-    initParameters( img_in_path, img_out_path, useShared, filtersEnabled, passNumber, argc, argv );
+    // initParameters( img_in_path, img_out_path, useShared, filtersEnabled, passNumber, argc, argv );
     // DEBUG_MODE
-    // presavedParameters( img_in_path, img_out_path, useShared, filtersEnabled, passNumber );
+    presavedParameters( img_in_path, img_out_path, useShared, filtersEnabled, passNumber );
 
     //---- Retrieve image properties
     cv::Mat img_in_matrix = cv::imread( *img_in_path, cv::IMREAD_UNCHANGED );
@@ -334,16 +330,14 @@ int main( int argc , char **argv )
     {
         // init convolution matrix and divider according to the filter selected
         char * conv_matrix_h, *conv_matrix_d;
+
+        cudaMallocHost( &conv_matrix_h, sizeof(char)*9 );
+
         init_conv_matrix_h( filtersEnabled->at(i), conv_matrix_h );
         cudaMalloc( &conv_matrix_d, sizeof(char)*9 );
         cudaMemcpy( conv_matrix_d, conv_matrix_h, sizeof(char)*9, cudaMemcpyHostToDevice );
 
         int divider = init_divider( filtersEnabled->at(i) );
-        int * divider_d;
-        int * divider_h = new int;
-        *divider_h = 16;
-        cudaMalloc( &divider_d, sizeof(int) );
-        cudaMemcpy( divider_d, divider_h, sizeof(int), cudaMemcpyHostToDevice );
 
         // apply the filter how many passes wished
         for( int j = 0 ; j < passNumber->at(i) ; ++j )
@@ -351,7 +345,7 @@ int main( int argc , char **argv )
             recordCudaChrono( &start );
             if( !*useShared )
             {
-                image_processing<<< grid0, block >>>( rgb_d, result_d, cols, rows, conv_matrix_d, divider_d );
+                image_processing<<< grid0, block >>>( rgb_d, result_d, cols, rows, conv_matrix_d, divider );
 
                 cudaDeviceSynchronize();
                 cudaError err = cudaGetLastError();
@@ -360,7 +354,7 @@ int main( int argc , char **argv )
             }
             else
             {
-                image_processing_shared<<< grid1, block, 3 * block.x * block.y >>>( rgb_d, result_d, cols, rows, conv_matrix_d, divider_d );
+                image_processing_shared<<< grid1, block, 3 * block.x * block.y >>>( rgb_d, result_d, cols, rows, conv_matrix_d, divider );
 
                 cudaDeviceSynchronize();
                 cudaError err = cudaGetLastError();
