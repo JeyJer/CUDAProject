@@ -359,19 +359,19 @@ int main( int argc , char **argv )
         std::cout << "matrix[][0] = " << (int)conv_matrix[0][0] << std::endl;
         std::cout << "matrix[][1] = " << (int)conv_matrix[0][1] << std::endl;
         std::cout << "matrix[][2] = " << (int)conv_matrix[0][2] << std::endl;
-        std::cout << "matrix[][0] = " << (int)conv_matrix[0][0] << std::endl;
-        std::cout << "matrix[][1] = " << (int)conv_matrix[0][1] << std::endl;
-        std::cout << "matrix[][2] = " << (int)conv_matrix[0][2] << std::endl;
-        std::cout << "matrix[][0] = " << (int)conv_matrix[0][0] << std::endl;
-        std::cout << "matrix[][1] = " << (int)conv_matrix[0][1] << std::endl;
-        std::cout << "matrix[][2] = " << (int)conv_matrix[0][2] << std::endl;
+        std::cout << "matrix[][0] = " << (int)conv_matrix[1][0] << std::endl;
+        std::cout << "matrix[][1] = " << (int)conv_matrix[1][1] << std::endl;
+        std::cout << "matrix[][2] = " << (int)conv_matrix[1][2] << std::endl;
+        std::cout << "matrix[][0] = " << (int)conv_matrix[2][0] << std::endl;
+        std::cout << "matrix[][1] = " << (int)conv_matrix[2][1] << std::endl;
+        std::cout << "matrix[][2] = " << (int)conv_matrix[2][2] << std::endl;
 
         int divider = init_divider( filtersEnabled->at(i) );
 
         // apply the filter how many passes wished
         std::cout << "[" << filtersEnabled->at(i) << "] " << "Apply filters" << std::endl;
         for( int j = 0 ; j < passNumber->at(i) ; ++j )
-        { 
+        {
             recordCudaChrono( &start );
             if( !*useShared )
             {
