@@ -194,13 +194,6 @@ void invert_pointer( unsigned char * ptr1, unsigned char * ptr2 )
     ptr2 = invertion_ptr;
 }
 
-void free_conv_matrix( char ** array )
-{
-    for( int i = 0 ; i < 3 ; i++ )
-        delete[] array[i];
-    delete[] array;
-}
-
 //----------------
 //----- CUDA -----
 //----------------
