@@ -1,7 +1,7 @@
 #ifndef PROJET_CUDA_MENU_LIB_H
 #define PROJET_CUDA_MENU_LIB_H
 
-#include "convmatrix_lib.hpp"
+#include "utilities.hpp"
 #include <vector>
 #include <string>
 
@@ -19,4 +19,5 @@ void printParameters( std::string txtBold, std::string txtNormal, bool isTxtBold
 int initParameters( std::string &img_in_path, std::string &img_out_path,
                      MenuSelection &menuChoice,
                      int argc , char **argv );
+
 #endif //PROJET_CUDA_MENU_LIB_H

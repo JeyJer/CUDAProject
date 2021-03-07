@@ -27,12 +27,13 @@ set_target_properties(
 
 add_executable(gpu_img_processor
         gpu_img_processor.cu
-        lib/gpu/gpu_img_transform_v0.cuh
-        lib/gpu/gpu_img_transform_v0.cu
-        lib/common/convmatrix_lib.hpp
-        lib/common/convmatrix_lib.cpp
+        lib/gpu/gpu_img_transform.cuh
+        lib/gpu/gpu_img_transform.cu
+        lib/common/utilities.hpp
+        lib/common/utilities.cpp
         lib/common/menu_lib.hpp
-        lib/common/menu_lib.cpp)
+        lib/common/menu_lib.cpp
+        )
 
 target_link_libraries(gpu_img_processor ${OpenCV_LIBS})
 
@@ -43,11 +44,10 @@ set_target_properties(
 
 add_executable(std_img_processor
         cpu_img_processor.cpp
-        lib/common/convmatrix_lib.hpp
-        lib/common/convmatrix_lib.cpp
+        lib/common/utilities.hpp
+        lib/common/utilities.cpp
         lib/common/menu_lib.hpp
         lib/common/menu_lib.cpp
-        lib/cpu/cpu_convolution_transform.hpp
-        lib/cpu/cpu_convolution_transform.cpp)
+        )
 
 target_link_libraries(std_img_processor ${OpenCV_LIBS})

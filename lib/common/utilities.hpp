@@ -45,6 +45,7 @@ static char ARR_SHARPEN[3*3] = { 0, -5, 0,
 };
 
 void set_convolution_properties(ConvolutionMatrixProperties &mat_def_properties, EffectStyle style);
-void copyReverse(char *desti, char *source, int length);
+void swapPointers( unsigned char **ptr1, unsigned char **ptr2 );
+void copyReverse(char *desti, EffectStyle style, int length);
 
 #endif //PROJET_CUDA_CONSTANTS_H

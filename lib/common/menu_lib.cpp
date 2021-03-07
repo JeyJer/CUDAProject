@@ -1,12 +1,12 @@
 #include <iostream>
 #include "menu_lib.hpp"
-#include "convmatrix_lib.hpp"
+#include "utilities.hpp"
 
 #define IMG_IN_PATH "/mnt/data/tsky-19/eclipsec/CUDAProjectV2/in.jpg"
 #define IMG_OUT_PATH "/mnt/data/tsky-19/eclipsec/CUDAProjectV2/out.jpg"
 
-#define DEFAULT_DIMX 4
-#define DEFAULT_DIMY 32
+#define DEFAULT_DIMX 32
+#define DEFAULT_DIMY 4
 
 void printParameters( std::string txtBold, std::string txtNormal, bool isTxtBoldUnderlined )
 {
