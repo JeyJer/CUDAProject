@@ -1,9 +1,5 @@
-//
-// Created by tsky on 06/03/2021.
-//
-
-#ifndef PROJET_CUDA_CONSTANTS_H
-#define PROJET_CUDA_CONSTANTS_H
+#ifndef PROJET_CUDA_UTILITIES_H
+#define PROJET_CUDA_UTILITIES_H
 
 enum EffectStyle {
     BOXBLUR, GAUSSIANBLUR, GAUSSIANBLUR5, EMBOSS, EMBOSS5, SHARPEN
@@ -48,4 +44,4 @@ void set_convolution_properties(ConvolutionMatrixProperties &mat_def_properties,
 void swapPointers( unsigned char **ptr1, unsigned char **ptr2 );
 void copyReverse(char *desti, EffectStyle style, int length);
 
-#endif //PROJET_CUDA_CONSTANTS_H
+#endif //PROJET_CUDA_UTILITIES_H

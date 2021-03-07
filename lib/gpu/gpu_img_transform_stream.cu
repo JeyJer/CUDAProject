@@ -164,6 +164,7 @@ int GpuImgTransformStream::execute(cv::Mat &m_in, cv::Mat &m_out, ExecutionInfo 
     return 0;
 }
 
+// TODO: stream mode shared
 int GpuImgTransformStream::executeSharedMemMode(cv::Mat &m_in, cv::Mat &m_out, ExecutionInfo &info)
 {
     return 0;

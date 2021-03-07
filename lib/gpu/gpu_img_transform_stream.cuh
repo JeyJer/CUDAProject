@@ -17,5 +17,4 @@ public:
     static int executeSharedMemMode(cv::Mat &img_in, cv::Mat &img_out, ExecutionInfo &info);
 };
 
-
 #endif //PROJET_CUDA_GPUIMGTRANSFORMSTREAM_H
