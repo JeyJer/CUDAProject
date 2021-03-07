@@ -3,7 +3,7 @@
 
 #include <opencv2/opencv.hpp>
 #include "common/menu_lib.hpp"
-
+#include "common/utilities.hpp"
 struct RefPointers {
     char* conv_matrix;
     ConvolutionMatrixProperties *conv_prop;
@@ -15,9 +15,8 @@ struct ExecutionInfo {
     ConvolutionMatrixProperties conv_properties;
     int nb_pass;
     dim3 block;
+    int nb_streams;
 };
-
-
 class GpuImgTransform {
 public:
     static int execute(cv::Mat &img_in, cv::Mat &img_out, ExecutionInfo &info);

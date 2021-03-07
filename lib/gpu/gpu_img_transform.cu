@@ -1,7 +1,6 @@
 #include <opencv2/opencv.hpp>
 #include <vector>
 #include <cstring>
-#include "common/utilities.hpp"
 #include "gpu_img_transform.cuh"
 
 __global__ void transform_img(unsigned char* input, unsigned char* output, std::size_t nb_cols, std::size_t nb_rows,
@@ -131,6 +130,9 @@ void initMemory(cv::Mat &m_in, RefPointers &dev, RefPointers &host, long size, i
 void freeMemory(RefPointers &dev, RefPointers &host){
     cudaFree(dev.rgb_in);
     cudaFree(dev.rgb_out);
+    cudaFree(dev.conv_matrix);
+    cudaFree(dev.conv_prop);
+
     cudaFreeHost(host.rgb_in);
 }
 
@@ -246,4 +248,3 @@ int GpuImgTransform::executeSharedMemMode(cv::Mat &m_in, cv::Mat &m_out, Executi
     freeMemory(dev, host);
     return 0;
 }
-
