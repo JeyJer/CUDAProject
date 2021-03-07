@@ -14,6 +14,7 @@ int main(int argc, char **argv)
 
     MenuSelection menuSelection;
     initParameters(img_in, img_out, menuSelection, argc, argv);
+
     ExecutionInfo info;
 
     cv::Mat m_in = cv::imread(img_in, cv::IMREAD_UNCHANGED);

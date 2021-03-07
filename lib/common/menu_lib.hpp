@@ -15,7 +15,7 @@ struct MenuSelection {
     std::vector<EffectStyle> enabled_filters;
     std::vector<int> nb_pass;
 };
-void printParameters( std::string txtBold, std::string txtNormal, bool isTxtBoldUnderlined );
+
 int initParameters( std::string &img_in_path, std::string &img_out_path,
                      MenuSelection &menuChoice,
                      int argc , char **argv );

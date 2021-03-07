@@ -8,6 +8,8 @@
 #define DEFAULT_DIMX 32
 #define DEFAULT_DIMY 4
 
+void printParameters( std::string txtBold, std::string txtNormal, bool isTxtBoldUnderlined );
+
 void printParameters( std::string txtBold, std::string txtNormal, bool isTxtBoldUnderlined )
 {
     std::cout << "\033[1" << ((isTxtBoldUnderlined) ? ";4" : "") << "m" << txtBold << "\033[0m" << txtNormal << std::endl;
@@ -75,7 +77,7 @@ int initParameters( std::string &img_in_path, std::string &img_out_path,
         presavedParameters(img_in_path, img_out_path, menuChoice);
         printOptionSelection(img_in_path, img_out_path, menuChoice);
         return 0;
-    } else if( argc < 2){
+    } else if( argc < 3){
         // wrong arguments: Message TODO
         return 1;
     }
@@ -86,7 +88,7 @@ int initParameters( std::string &img_in_path, std::string &img_out_path,
     img_in_path = argv[1];
     img_out_path = argv[2];
 
-    if( argc >= 6){
+    if( argc >= 7){
 
         menuChoice.block.dimX = std::atoi(argv[3]);
         menuChoice.block.dimY = std::atoi(argv[4]);
@@ -105,15 +107,15 @@ int initParameters( std::string &img_in_path, std::string &img_out_path,
         menuChoice.enabled_filters.push_back(BOXBLUR);
         menuChoice.nb_pass.push_back( 1 );
 
-        if( argc == 5 ){
+        if( argc == 6 ){
             menuChoice.use_shared = std::atoi(argv[5]);
             menuChoice.block.dimY = std::atoi(argv[4]);
             menuChoice.block.dimX = std::atoi(argv[3]);
-        }else if( argc == 4){
+        }else if( argc == 5){
             menuChoice.use_shared = false;
             menuChoice.block.dimY = std::atoi(argv[4]);
             menuChoice.block.dimX = std::atoi(argv[3]);
-        }else if(argc == 3){
+        }else if(argc == 4){
             menuChoice.use_shared = false;
             menuChoice.block.dimY = DEFAULT_DIMY;
             menuChoice.block.dimX = std::atoi(argv[3]);

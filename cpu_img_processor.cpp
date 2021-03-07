@@ -94,6 +94,7 @@ int main(int argc, char **argv)
         memcpy(rgb_in_aux, transformation.output, 3 * rows * cols  * sizeof(unsigned char));
 
     }
+    // TODO: free
 
     cv::Mat m_out(rows, cols, CV_8UC3, rgb_in_aux);
     cv::imwrite(img_out, m_out);

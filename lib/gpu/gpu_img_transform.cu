@@ -38,7 +38,7 @@ __global__ void transform_img(unsigned char* input, unsigned char* output, std::
         long i_max = ith_col + conv_mat_properties->start_index + conv_mat_properties->size;
         long j_max = j_local + conv_mat_properties->size;
         long rgb[3] = {0, 0, 0};
-        for( int j_inc = 0; j_local < j_max; j_local++){
+        for( long j_inc = 0; j_local < j_max; j_local++){
 
             i_local = i_max - conv_mat_properties->size;
             long index =  3 * (j_local * (long)nb_cols + i_local);
@@ -50,7 +50,7 @@ __global__ void transform_img(unsigned char* input, unsigned char* output, std::
                 index += 3;
             }
         }
-        for( int i = 0, j = 3 * (jth_row * (long)nb_cols + ith_col); i < 3; i++, j++)
+        for( long i = 0, j = 3 * (jth_row * (long)nb_cols + ith_col); i < 3; i++, j++)
             output[j] = rgb[i] / conv_mat_properties->divisor;
     }
 }
