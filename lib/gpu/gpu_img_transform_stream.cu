@@ -45,7 +45,7 @@ __global__ void transform_img_stream(unsigned char* input, unsigned char* output
     }
 }
 
-void initMemory(cv::Mat &m_in, RefPointers &dev, RefPointers &host, long size, int conv_mat_length){
+void initSteamModeMemory(cv::Mat &m_in, RefPointers &dev, RefPointers &host, long size, int conv_mat_length){
     cudaMallocHost(&host.rgb_in, size);
     std::memcpy(host.rgb_in, m_in.data, size);
 
@@ -69,7 +69,7 @@ void initStreamAndDevMem(StreamProperty &size, int nb_streams, cudaStream_t *str
     }
 
 }
-void freeMemory(RefPointers &dev, RefPointers &host){
+void freeStreamModeMemory(RefPointers &dev, RefPointers &host){
     cudaFree(dev.rgb_in);
     cudaFree(dev.rgb_out);
     cudaFree(dev.conv_matrix);
@@ -80,7 +80,7 @@ void freeMemory(RefPointers &dev, RefPointers &host){
 
 //static int execute(cv::Mat &img_in, cv::Mat &img_out, char *conv_mat, ConvolutionMatrixProperties &conv_mat_prop);
 // static int executeSharedMemMode(cv::Mat &img_in, cv::Mat &img_out, char *conv_mat, ConvolutionMatrixProperties &conv_mat_prop);
-int GpuImgTransform::execute(cv::Mat &m_in, cv::Mat &m_out, ExecutionInfo &info)
+int GpuImgTransformStream::execute(cv::Mat &m_in, cv::Mat &m_out, ExecutionInfo &info)
 {
     auto rows = m_in.rows;
     auto cols = m_in.cols;
@@ -95,7 +95,7 @@ int GpuImgTransform::execute(cv::Mat &m_in, cv::Mat &m_out, ExecutionInfo &info)
     StreamProperty size(i, i * (int)sizeof(unsigned char));
     int conv_mat_length = info.conv_properties.size * info.conv_properties.size;
 
-    initMemory(m_in, dev, host, size.units, conv_mat_length);
+    initSteamModeMemory(m_in, dev, host, size.units, conv_mat_length);
 
     host.conv_prop = &info.conv_properties;
     host.conv_matrix = info.conv_matrix;
@@ -160,7 +160,12 @@ int GpuImgTransform::execute(cv::Mat &m_in, cv::Mat &m_out, ExecutionInfo &info)
     cudaEventDestroy(start);
     cudaEventDestroy(stop);
 
-    freeMemory(dev, host);
+    freeStreamModeMemory(dev, host);
+    return 0;
+}
+
+int GpuImgTransformStream::executeSharedMemMode(cv::Mat &m_in, cv::Mat &m_out, ExecutionInfo &info)
+{
     return 0;
 }
 

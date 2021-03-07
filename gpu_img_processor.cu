@@ -1,6 +1,7 @@
 #include <opencv2/opencv.hpp>
 #include <vector>
 #include <cstring>
+#include <gpu/gpu_img_transform_stream.cuh>
 
 #include "common/menu_lib.hpp"
 #include "common/utilities.hpp"
@@ -25,46 +26,37 @@ int main(int argc, char **argv)
     cudaMallocHost(&rgb_in_aux, 3 * m_in.rows * m_in.cols);
     cv::Mat m_out(m_in.rows, m_in.cols, CV_8UC3, rgb_in_aux);
 
-    if( ! menuSelection.use_shared ){
-        for( int i = 0; i < menuSelection.enabled_filters.size(); i++){
-            EffectStyle filter = menuSelection.enabled_filters.at(i);
-            set_convolution_properties(info.conv_properties, filter);
-            int conv_mat_length = info.conv_properties.size * info.conv_properties.size;
+    int (*fnc_exec) (cv::Mat&, cv::Mat&, ExecutionInfo& );
 
-            char conv_mat[conv_mat_length];
-            info.conv_matrix = conv_mat;
-            info.nb_pass = menuSelection.nb_pass.at(i);
-            info.block.x = menuSelection.block.dimX;
-            info.block.y = menuSelection.block.dimY;
+    // menuSelection.nb_stream = 20;
+    if( menuSelection.nb_stream == 0) {
+        if (!menuSelection.use_shared)
+            fnc_exec = GpuImgTransform::execute;
+        else
+            fnc_exec = GpuImgTransform::executeSharedMemMode;
+    }else {
+        if (!menuSelection.use_shared)
+            fnc_exec = GpuImgTransformStream::execute;
+        else
+            fnc_exec = GpuImgTransformStream::executeSharedMemMode;
+    }
+    for( int i = 0; i < menuSelection.enabled_filters.size(); i++){
+        EffectStyle filter = menuSelection.enabled_filters.at(i);
+        set_convolution_properties(info.conv_properties, filter);
+        int conv_mat_length = info.conv_properties.size * info.conv_properties.size;
 
-            copyReverse(conv_mat, filter, conv_mat_length);
+        char conv_mat[conv_mat_length];
+        info.set(conv_mat, menuSelection.nb_pass.at(i), menuSelection.block.dimX,
+                 menuSelection.block.dimY, menuSelection.nb_stream);
 
-            GpuImgTransform::execute(m_in, m_out, info );
+        copyReverse(conv_mat, filter, conv_mat_length);
 
-            memcpy(m_in.data, m_out.data, 3 * rows * cols  * sizeof(unsigned char));
+        (*fnc_exec)(m_in, m_out, info );
 
-        }
-    }else{
-        for( int i = 0; i < menuSelection.enabled_filters.size(); i++){
-            EffectStyle filter = menuSelection.enabled_filters.at(i);
-            set_convolution_properties(info.conv_properties, filter);
-            int conv_mat_length = info.conv_properties.size * info.conv_properties.size;
-
-            char conv_mat[conv_mat_length];
-            info.conv_matrix = conv_mat;
-            info.nb_pass = menuSelection.nb_pass.at(i);
-            info.block.x = menuSelection.block.dimX;
-            info.block.y = menuSelection.block.dimY;
-
-            copyReverse(conv_mat, filter, conv_mat_length);
-
-            GpuImgTransform::executeSharedMemMode(m_in, m_out, info);
-
-            memcpy(m_in.data, m_out.data, 3 * rows * cols  * sizeof(unsigned char));
-
-        }
+        memcpy(m_in.data, m_out.data, 3 * rows * cols  * sizeof(unsigned char));
 
     }
+
     cv::imwrite(img_out, m_out);
 
     cudaFreeHost(rgb_in_aux);

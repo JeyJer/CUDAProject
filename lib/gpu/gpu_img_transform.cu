@@ -3,6 +3,14 @@
 #include <cstring>
 #include "gpu_img_transform.cuh"
 
+void ExecutionInfo::set(char *conv_mat, int nunber_of_pass, int dimX, int dimY, int number_of_streams){
+    conv_matrix = conv_mat;
+    nb_pass = nunber_of_pass;
+    nb_streams = number_of_streams;
+    block.x = dimX;
+    block.y = dimY;
+}
+
 __global__ void transform_img(unsigned char* input, unsigned char* output, std::size_t nb_cols, std::size_t nb_rows,
                               char * conv_mat, ConvolutionMatrixProperties *conv_mat_properties)
 {

@@ -30,7 +30,7 @@ add_executable(gpu_img_processor
         lib/gpu/gpu_img_transform.cuh
         lib/gpu/gpu_img_transform.cu
         lib/gpu/gpu_img_transform_stream.cuh
-        lib/gpu/gpu_img_transform_stream.cuh
+        lib/gpu/gpu_img_transform_stream.cu
         lib/common/utilities.hpp
         lib/common/utilities.cpp
         lib/common/menu_lib.hpp

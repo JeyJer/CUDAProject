@@ -16,6 +16,8 @@ struct ExecutionInfo {
     int nb_pass;
     dim3 block;
     int nb_streams;
+
+    void set(char *conv_mat, int nunber_of_pass, int dimX, int dimY, int number_of_streams);
 };
 class GpuImgTransform {
 public:
