@@ -1,5 +1,25 @@
-#include "gpu/gpu_img_transform.cuh"
 #include "gpu/gpu_img_transform_stream.cuh"
+
+StreamInfo::StreamInfo(double size, long rows): size(size), rows(rows){
+    size_bytes = (long)size * (long)sizeof(unsigned char);
+    size_block = size;
+}
+StreamInfo::StreamInfo(const StreamInfo &streams_info, int nb_streams, long cols, ConvolutionMatrixProperties &conv_prop){
+    if( nb_streams == 1){
+        size_bytes = streams_info.size_bytes;
+        size = streams_info.size;
+        rows = streams_info.rows;
+        size_block = size;
+    } else {
+        // add k rows per stream
+        rows = streams_info.rows / nb_streams - 2 * conv_prop.start_index;
+
+        size_block = streams_info.size / nb_streams;
+
+        size = streams_info.size / nb_streams - 2 * (double)conv_prop.start_index * (double)cols * 3;
+        size_bytes = (long)size * (long)sizeof(unsigned char);
+    }
+}
 
 __global__ void transform_img_stream(unsigned char* input, unsigned char* output, std::size_t nb_cols, std::size_t nb_rows,
                               char * conv_mat, ConvolutionMatrixProperties *conv_mat_properties)
@@ -40,70 +60,85 @@ __global__ void transform_img_stream(unsigned char* input, unsigned char* output
                 index += 3;
             }
         }
-        for( int i = 0, j = 3 * (jth_row * (long)nb_cols + ith_col); i < 3; i++, j++)
+        long j_desti = jth_row + conv_mat_properties->start_index;
+
+        for( int i = 0, j = 3 * (j_desti * (long)nb_cols + ith_col); i < 3; i++, j++)
             output[j] = rgb[i] / conv_mat_properties->divisor;
     }
 }
 
-void initSteamModeMemory(cv::Mat &m_in, RefPointers &dev, RefPointers &host, long size, int conv_mat_length){
-    cudaMallocHost(&host.rgb_in, size);
-    std::memcpy(host.rgb_in, m_in.data, size);
+void GpuImgTransformStream::initMemory(cv::Mat &m_in, ConvMatrixPointers &dev_convolution,
+        Pointers &host, long size, int conv_mat_length){
+    cudaMallocHost(&host.rgb.in, size);
+    std::memcpy(host.rgb.in, m_in.data, size);
 
-    cudaMalloc(&dev.rgb_in, size);
-    cudaMalloc(&dev.rgb_out, size);
-    cudaMalloc(&dev.conv_matrix, conv_mat_length * sizeof(char));
-    cudaMalloc(&dev.conv_prop, sizeof(ConvolutionMatrixProperties));
+    cudaMalloc(&dev_convolution.matrix, conv_mat_length * sizeof(char));
+    cudaMalloc(&dev_convolution.prop, sizeof(ConvolutionMatrixProperties));
 
-    cudaMemcpy(dev.conv_matrix, host.conv_matrix, conv_mat_length, cudaMemcpyHostToDevice);
-    cudaMemcpy(dev.conv_prop , host.conv_prop, sizeof(ConvolutionMatrixProperties), cudaMemcpyHostToDevice);
+    cudaMemcpy(dev_convolution.matrix, host.convolution.matrix, conv_mat_length, cudaMemcpyHostToDevice);
+    cudaMemcpy(dev_convolution.prop , host.convolution.prop, sizeof(ConvolutionMatrixProperties),
+            cudaMemcpyHostToDevice);
+
 }
 
-void initStreamAndDevMem(StreamProperty &size, int nb_streams, cudaStream_t *streams,
-        unsigned char *dev_rgb_in, unsigned char *host_rgb_in){
-    double size_per_stream = (double)size.units / nb_streams;
-    long size_per_stream_bytes = size.bytes / nb_streams;
-    for( int i = 0 ; i < nb_streams; ++i ){
+void GpuImgTransformStream::initStreamAndDevMem(StreamInfo &per_stream_info, int nb_streams, cudaStream_t *streams,
+        RgbPointers *dev_rgbs, unsigned char *host_rgb_in){
 
-        cudaMemcpyAsync( dev_rgb_in + (int)(i * size_per_stream) , host_rgb_in + (int)(i * size_per_stream),
-                         size_per_stream_bytes, cudaMemcpyHostToDevice, streams[ i ] );
+    for( int i = 0 ; i < nb_streams; ++i ) {
+        cudaMalloc(&dev_rgbs[i].in, per_stream_info.size_bytes);
+        cudaMalloc(&dev_rgbs[i].out, per_stream_info.size_bytes);
     }
 
+    for( int i = 0 ; i < nb_streams; ++i ){
+        cudaMemcpyAsync( dev_rgbs[i].in,host_rgb_in + (int)(i * per_stream_info.size_block),
+                         per_stream_info.size_bytes,
+                         cudaMemcpyHostToDevice, streams[ i ] );
+    }
 }
-void freeStreamModeMemory(RefPointers &dev, RefPointers &host){
-    cudaFree(dev.rgb_in);
-    cudaFree(dev.rgb_out);
-    cudaFree(dev.conv_matrix);
-    cudaFree(dev.conv_prop);
+void GpuImgTransformStream::freeMemory(RgbPointers *dev_rgbs, ConvMatrixPointers &dev_convolution, Pointers &host, int nb_streams){
+    for( int i = 0 ; i < nb_streams; ++i ){
+        cudaFree(dev_rgbs[i].in);
+        cudaFree(dev_rgbs[i].in);
+    }
+    cudaFree(dev_convolution.matrix);
+    cudaFree(dev_convolution.prop);
 
-    cudaFreeHost(host.rgb_in);
+    cudaFreeHost(host.rgb.in);
 }
 
 //static int execute(cv::Mat &img_in, cv::Mat &img_out, char *conv_mat, ConvolutionMatrixProperties &conv_mat_prop);
 // static int executeSharedMemMode(cv::Mat &img_in, cv::Mat &img_out, char *conv_mat, ConvolutionMatrixProperties &conv_mat_prop);
-int GpuImgTransformStream::execute(cv::Mat &m_in, cv::Mat &m_out, ExecutionInfo &info)
+int GpuImgTransformStream::execute(cv::Mat &m_in, cv::Mat &m_out, GpuUtilExecutionInfo &info)
 {
     auto rows = m_in.rows;
     auto cols = m_in.cols;
 
-    RefPointers dev;
-    RefPointers host;
-
-    host.conv_prop = &info.conv_properties;
-    host.conv_matrix = info.conv_matrix;
-
-    long i = 3 * rows * cols;
-    StreamProperty size(i, i * (int)sizeof(unsigned char));
-    int conv_mat_length = info.conv_properties.size * info.conv_properties.size;
-
-    initSteamModeMemory(m_in, dev, host, size.units, conv_mat_length);
-
-    host.conv_prop = &info.conv_properties;
-    host.conv_matrix = info.conv_matrix;
+    // Pointers dev;
+    Pointers host;
+    ConvMatrixPointers dev_convolution;
+    RgbPointers dev_rgbs[ info.nb_streams ];
 
     cudaStream_t streams[ info.nb_streams  ];
+
+    host.convolution.prop = &info.conv_properties;
+    host.convolution.matrix = info.conv_matrix;
+
+    long i = 3 * rows * cols;
+    StreamInfo streams_info((double)i,  m_in.rows);
+
+    StreamInfo per_stream_info(streams_info, info.nb_streams, cols, info.conv_properties);
+
+    int conv_mat_length = info.conv_properties.size * info.conv_properties.size;
+
+    host.convolution.prop = &info.conv_properties;
+    host.convolution.matrix = info.conv_matrix;
+
+    GpuImgTransformStream::initMemory(m_in, dev_convolution, host, i,  conv_mat_length);
+
+
     for( i = 0 ; i < info.nb_streams ; ++i ) cudaStreamCreate( &streams[ i ] );
 
-    initStreamAndDevMem(size, info.nb_streams, streams, dev.rgb_in, host.rgb_in);
+    GpuImgTransformStream::initStreamAndDevMem(per_stream_info, info.nb_streams, streams, dev_rgbs, host.rgb.in);
 
     cudaEvent_t start, stop;
 
@@ -114,26 +149,14 @@ int GpuImgTransformStream::execute(cv::Mat &m_in, cv::Mat &m_out, ExecutionInfo 
     cudaEventRecord(start);
 
     dim3 grid0((cols - 1) / (info.block.x - 1 + info.conv_properties.start_index) + 1,
-               (rows - 1) / (info.block.y - 1 + + info.conv_properties.start_index) + 1);
+               (rows - 1) / (info.block.y - 1 + info.conv_properties.start_index) + 1);
 
-    double size_per_stream = (double)size.units / info.nb_streams;
-    long size_per_stream_bytes = size.bytes / info.nb_streams;
-    long rows_per_stream = rows / info.nb_streams;
 
     for( i = 0 ; i < info.nb_streams ; ++i )
     {
         transform_img_stream<<< grid0, info.block, 3 * info.block.x * info.block.y, streams[ i ] >>>(
-                dev.rgb_in + (long)(i * size_per_stream), dev.rgb_out + (long)(i * size_per_stream),
-                cols, rows_per_stream , dev.conv_matrix, dev.conv_prop);
-    }
-    for( int kth_pass = 1; kth_pass < info.nb_pass; kth_pass++ ){
-        swapPointers(&dev.rgb_in, &dev.rgb_out);
-        for( i = 0 ; i < info.nb_streams ; ++i )
-        {
-            transform_img_stream<<< grid0, info.block, 3 * info.block.x * info.block.y, streams[ i ] >>>(
-                    dev.rgb_in + (long)(i * size_per_stream), dev.rgb_out + (long)(i * size_per_stream),
-                    cols, rows_per_stream , dev.conv_matrix, dev.conv_prop);
-        }
+                dev_rgbs[i].in, dev_rgbs[i].out,
+                cols, per_stream_info.rows , dev_convolution.matrix, dev_convolution.prop);
     }
 
     cudaDeviceSynchronize();
@@ -142,11 +165,10 @@ int GpuImgTransformStream::execute(cv::Mat &m_in, cv::Mat &m_out, ExecutionInfo 
     // unsigned char *host_rgb_aux = m_out.data;
     for(  i = 0 ; i < info.nb_streams ; ++i )
     {
-        cudaMemcpyAsync( m_out.data + (long)(i * (size_per_stream - 6 * cols)),
-                dev.rgb_out + (long)(i * (size_per_stream) + 3 * cols),
-                size_per_stream_bytes - 6 * cols * sizeof(unsigned char),
-                cudaMemcpyDeviceToHost, streams[ i ] );
+        unsigned char *desti = m_out.data + (long)(i * (long)per_stream_info.size_block);
 
+        cudaMemcpyAsync( desti, dev_rgbs[i].out,(long)per_stream_info.size_block * sizeof(unsigned char),
+                cudaMemcpyDeviceToHost, streams[ i ] );
     }
 
     cudaEventSynchronize(stop);
@@ -160,12 +182,12 @@ int GpuImgTransformStream::execute(cv::Mat &m_in, cv::Mat &m_out, ExecutionInfo 
     cudaEventDestroy(start);
     cudaEventDestroy(stop);
 
-    freeStreamModeMemory(dev, host);
+    GpuImgTransformStream::freeMemory(dev_rgbs, dev_convolution, host, info.nb_streams);
     return 0;
 }
 
 // TODO: stream mode shared
-int GpuImgTransformStream::executeSharedMemMode(cv::Mat &m_in, cv::Mat &m_out, ExecutionInfo &info)
+int GpuImgTransformStream::executeSharedMemMode(cv::Mat &m_in, cv::Mat &m_out, GpuUtilExecutionInfo &info)
 {
     return 0;
 }

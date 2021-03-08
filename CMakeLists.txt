@@ -33,8 +33,8 @@ add_executable(gpu_img_processor
         lib/gpu/gpu_img_transform_stream.cu
         lib/common/utilities.hpp
         lib/common/utilities.cpp
-        lib/common/menu_lib.hpp
-        lib/common/menu_lib.cpp
+        lib/gpu/gpu_utilities.cuh
+        lib/gpu/gpu_utilities.cu
         )
 
 target_link_libraries(gpu_img_processor ${OpenCV_LIBS})
@@ -46,10 +46,12 @@ set_target_properties(
 
 add_executable(std_img_processor
         cpu_img_processor.cpp
+        lib/cpu/cpu_img_transform.hpp
+        lib/cpu/cpu_img_transform.cpp
         lib/common/utilities.hpp
         lib/common/utilities.cpp
-        lib/common/menu_lib.hpp
-        lib/common/menu_lib.cpp
+        lib/cpu/cpu_utilities.hpp
+        lib/cpu/cpu_utilities.cpp
         )
 
 target_link_libraries(std_img_processor ${OpenCV_LIBS})

@@ -3,7 +3,7 @@
 #include <cstring>
 #include <gpu/gpu_img_transform_stream.cuh>
 
-#include "common/menu_lib.hpp"
+#include "gpu/gpu_utilities.cuh"
 #include "common/utilities.hpp"
 #include "gpu/gpu_img_transform.cuh"
 
@@ -12,10 +12,10 @@ int main(int argc, char **argv)
     std::string img_out = "/mnt/data/tsky-19/eclipsec/CUDAProjectV2/out.jpg";
     std::string img_in = "/mnt/data/tsky-19/eclipsec/CUDAProjectV2/in.jpg";
 
-    MenuSelection menuSelection;
-    initParameters(img_in, img_out, menuSelection, argc, argv);
+    GpuUtilMenuSelection menuSelection;
+    GpuUtilMenuSelection::initParameters(img_in, img_out, menuSelection, argc, argv);
 
-    ExecutionInfo info;
+    GpuUtilExecutionInfo info;
 
     cv::Mat m_in = cv::imread(img_in, cv::IMREAD_UNCHANGED);
 
@@ -27,9 +27,9 @@ int main(int argc, char **argv)
     cudaMallocHost(&rgb_in_aux, 3 * m_in.rows * m_in.cols);
     cv::Mat m_out(m_in.rows, m_in.cols, CV_8UC3, rgb_in_aux);
 
-    int (*fnc_exec) (cv::Mat&, cv::Mat&, ExecutionInfo& );
+    int (*fnc_exec) (cv::Mat&, cv::Mat&, GpuUtilExecutionInfo& );
 
-    // menuSelection.nb_stream = 20;
+    menuSelection.nb_stream = 60;
     if( menuSelection.nb_stream == 0) {
         if (!menuSelection.use_shared)
             fnc_exec = GpuImgTransform::execute;
@@ -47,15 +47,22 @@ int main(int argc, char **argv)
         int conv_mat_length = info.conv_properties.size * info.conv_properties.size;
 
         char conv_mat[conv_mat_length];
-        info.set(conv_mat, menuSelection.nb_pass.at(i), menuSelection.block.dimX,
-                 menuSelection.block.dimY, menuSelection.nb_stream);
+
+        info.conv_matrix = conv_mat;
+        info.nb_pass = menuSelection.nb_pass.at(i);
+        info.nb_streams = menuSelection.nb_stream;
+        info.block.x = menuSelection.block.dimX;
+        info.block.y = menuSelection.block.dimY;
 
         copyReverse(conv_mat, filter, conv_mat_length);
 
+        info.nb_pass = 20;
         (*fnc_exec)(m_in, m_out, info );
 
-        memcpy(m_in.data, m_out.data, 3 * rows * cols  * sizeof(unsigned char));
-
+        for(int kth_pass = 0; kth_pass < info.nb_pass; kth_pass++){
+            memcpy(m_in.data, m_out.data, 3 * rows * cols  * sizeof(unsigned char));
+            (*fnc_exec)(m_in, m_out, info );
+        }
     }
 
     cv::imwrite(img_out, m_out);

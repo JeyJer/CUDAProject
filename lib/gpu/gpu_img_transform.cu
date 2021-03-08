@@ -1,15 +1,4 @@
-#include <opencv2/opencv.hpp>
-#include <vector>
-#include <cstring>
 #include "gpu_img_transform.cuh"
-
-void ExecutionInfo::set(char *conv_mat, int nunber_of_pass, int dimX, int dimY, int number_of_streams){
-    conv_matrix = conv_mat;
-    nb_pass = nunber_of_pass;
-    nb_streams = number_of_streams;
-    block.x = dimX;
-    block.y = dimY;
-}
 
 __global__ void transform_img(unsigned char* input, unsigned char* output, std::size_t nb_cols, std::size_t nb_rows,
                               char * conv_mat, ConvolutionMatrixProperties *conv_mat_properties)
@@ -122,48 +111,48 @@ __global__ void transform_img_shared(unsigned char* input, unsigned char* output
     }
 }
 
-void initMemory(cv::Mat &m_in, RefPointers &dev, RefPointers &host, long size, int conv_mat_length){
-    cudaMallocHost(&host.rgb_in, size);
-    std::memcpy(host.rgb_in, m_in.data, size);
+void GpuImgTransform::initMemory(cv::Mat &m_in, Pointers &dev, Pointers &host, long size, int conv_mat_length){
+    cudaMallocHost(&host.rgb.in, size);
+    std::memcpy(host.rgb.in, m_in.data, size);
 
-    cudaMalloc(&dev.rgb_in, size);
-    cudaMalloc(&dev.rgb_out, size);
-    cudaMalloc(&dev.conv_matrix, conv_mat_length * sizeof(char));
-    cudaMalloc(&dev.conv_prop, sizeof(ConvolutionMatrixProperties));
+    cudaMalloc(&dev.rgb.in, size);
+    cudaMalloc(&dev.rgb.out, size);
+    cudaMalloc(&dev.convolution.matrix, conv_mat_length * sizeof(char));
+    cudaMalloc(&dev.convolution.prop, sizeof(ConvolutionMatrixProperties));
 
-    cudaMemcpy(dev.rgb_in, host.rgb_in, size, cudaMemcpyHostToDevice);
-    cudaMemcpy(dev.conv_matrix, host.conv_matrix, conv_mat_length, cudaMemcpyHostToDevice);
-    cudaMemcpy(dev.conv_prop , host.conv_prop, sizeof(ConvolutionMatrixProperties), cudaMemcpyHostToDevice);
+    cudaMemcpy(dev.rgb.in, host.rgb.in, size, cudaMemcpyHostToDevice);
+    cudaMemcpy(dev.convolution.matrix, host.convolution.matrix, conv_mat_length, cudaMemcpyHostToDevice);
+    cudaMemcpy(dev.convolution.prop , host.convolution.prop, sizeof(ConvolutionMatrixProperties), cudaMemcpyHostToDevice);
 }
-void freeMemory(RefPointers &dev, RefPointers &host){
-    cudaFree(dev.rgb_in);
-    cudaFree(dev.rgb_out);
-    cudaFree(dev.conv_matrix);
-    cudaFree(dev.conv_prop);
+void GpuImgTransform::freeMemory(Pointers &dev, Pointers &host){
+    cudaFree(dev.rgb.in);
+    cudaFree(dev.rgb.out);
+    cudaFree(dev.convolution.matrix);
+    cudaFree(dev.convolution.prop);
 
-    cudaFreeHost(host.rgb_in);
+    cudaFreeHost(host.rgb.in);
 }
 
 //static int execute(cv::Mat &img_in, cv::Mat &img_out, char *conv_mat, ConvolutionMatrixProperties &conv_mat_prop);
 // static int executeSharedMemMode(cv::Mat &img_in, cv::Mat &img_out, char *conv_mat, ConvolutionMatrixProperties &conv_mat_prop);
-int GpuImgTransform::execute(cv::Mat &m_in, cv::Mat &m_out, ExecutionInfo &info)
+int GpuImgTransform::execute(cv::Mat &m_in, cv::Mat &m_out, GpuUtilExecutionInfo &info)
 {
     auto rows = m_in.rows;
     auto cols = m_in.cols;
 
-    RefPointers dev;
-    RefPointers host;
+    Pointers dev;
+    Pointers host;
 
-    host.conv_prop = &info.conv_properties;
-    host.conv_matrix = info.conv_matrix;
+    host.convolution.prop = &info.conv_properties;
+    host.convolution.matrix = info.conv_matrix;
 
     int size = 3 * rows * cols;
     int conv_mat_length = info.conv_properties.size * info.conv_properties.size;
 
     initMemory(m_in, dev, host, size, conv_mat_length);
 
-    host.conv_prop = &info.conv_properties;
-    host.conv_matrix = info.conv_matrix;
+    host.convolution.prop = &info.conv_properties;
+    host.convolution.matrix = info.conv_matrix;
 
     cudaEvent_t start, stop;
 
@@ -175,17 +164,14 @@ int GpuImgTransform::execute(cv::Mat &m_in, cv::Mat &m_out, ExecutionInfo &info)
 
     dim3 grid0((cols - 1) / info.block.x + 1, (rows - 1) / info.block.y + 1);
 
-    transform_img<<< grid0, info.block >>>(dev.rgb_in, dev.rgb_out, cols, rows, dev.conv_matrix, dev.conv_prop);
-    for( int kth_pass = 1; kth_pass < info.nb_pass; kth_pass++ ){
-        swapPointers(&dev.rgb_in, &dev.rgb_out);
-        transform_img<<< grid0, info.block >>>(dev.rgb_in, dev.rgb_out, cols, rows, dev.conv_matrix, dev.conv_prop);
-    }
+    transform_img<<< grid0, info.block >>>(dev.rgb.in, dev.rgb.out, cols, rows, dev.convolution.matrix,
+            dev.convolution.prop);
 
     cudaDeviceSynchronize();
     cudaEventRecord(stop);
 
     // unsigned char *host_rgb_aux = m_out.data;
-    cudaMemcpy(m_out.data, dev.rgb_out, size, cudaMemcpyDeviceToHost);
+    cudaMemcpy(m_out.data, dev.rgb.out, size, cudaMemcpyDeviceToHost);
 
     cudaEventSynchronize(stop);
 
@@ -201,23 +187,23 @@ int GpuImgTransform::execute(cv::Mat &m_in, cv::Mat &m_out, ExecutionInfo &info)
 }
 
 
-int GpuImgTransform::executeSharedMemMode(cv::Mat &m_in, cv::Mat &m_out, ExecutionInfo &info){
+int GpuImgTransform::executeSharedMemMode(cv::Mat &m_in, cv::Mat &m_out, GpuUtilExecutionInfo &info){
     auto rows = m_in.rows;
     auto cols = m_in.cols;
 
-    RefPointers dev;
-    RefPointers host;
+    Pointers dev;
+    Pointers host;
 
-    host.conv_prop = &info.conv_properties;
-    host.conv_matrix = info.conv_matrix;
+    host.convolution.prop = &info.conv_properties;
+    host.convolution.matrix = info.conv_matrix;
 
     int size = 3 * rows * cols;
     int conv_mat_length = info.conv_properties.size * info.conv_properties.size;
 
     initMemory(m_in, dev, host, size, conv_mat_length);
 
-    host.conv_prop = &info.conv_properties;
-    host.conv_matrix = info.conv_matrix;
+    host.convolution.prop = &info.conv_properties;
+    host.convolution.matrix = info.conv_matrix;
 
     cudaEvent_t start, stop;
 
@@ -228,21 +214,16 @@ int GpuImgTransform::executeSharedMemMode(cv::Mat &m_in, cv::Mat &m_out, Executi
     cudaEventRecord(start);
 
     dim3 grid0((cols - 1) / (info.block.x - 1 + info.conv_properties.start_index) + 1,
-            (rows - 1) / (info.block.y - 1 + + info.conv_properties.start_index) + 1);
+            (rows - 1) / (info.block.y - 1 + info.conv_properties.start_index) + 1);
 
-    transform_img_shared<<<grid0, info.block, 3 * info.block.x * info.block.y>>>(dev.rgb_in, dev.rgb_out, cols, rows,
-                                                                                 dev.conv_matrix, dev.conv_prop);
-    for( int kth_pass = 1; kth_pass < info.nb_pass; kth_pass++ ){
-        swapPointers(&dev.rgb_in, &dev.rgb_out);
-        transform_img_shared<<<grid0, info.block, 3 * info.block.x * info.block.y>>>(dev.rgb_in, dev.rgb_out, cols, rows,
-                                                                      dev.conv_matrix, dev.conv_prop);
-    }
+    transform_img_shared<<<grid0, info.block, 3 * info.block.x * info.block.y>>>(dev.rgb.in, dev.rgb.out, cols, rows,
+            dev.convolution.matrix, dev.convolution.prop);
 
     cudaDeviceSynchronize();
     cudaEventRecord(stop);
 
     // unsigned char *host_rgb_aux = m_out.data;
-    cudaMemcpy(m_out.data, dev.rgb_out, size, cudaMemcpyDeviceToHost);
+    cudaMemcpy(m_out.data, dev.rgb.out, size, cudaMemcpyDeviceToHost);
 
     cudaEventSynchronize(stop);
 
