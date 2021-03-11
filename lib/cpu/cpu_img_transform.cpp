@@ -67,6 +67,10 @@ int CpuImgTransform::execute(cv::Mat &m_in, cv::Mat &m_out, CpuUtilExecutionInfo
 
     transform_img(host.rgb.in, host.rgb.out, cols, rows , host.convolution.matrix, *host.convolution.prop);
 
+    for( int kth_pass = 1; kth_pass < info.nb_pass; kth_pass++){
+        swapPointers(&host.rgb.in, &host.rgb.out);
+        transform_img(host.rgb.in, host.rgb.out, cols, rows , host.convolution.matrix, *host.convolution.prop);
+    }
     // stop timer
     // std::cout << "time=" << duration << std::endl;
 

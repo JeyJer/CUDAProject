@@ -20,6 +20,7 @@ class GpuImgTransformStream {
                            Pointers &host, long size, int conv_mat_length);
     static void initStreamAndDevMem(StreamInfo &per_stream_info, int nb_streams, cudaStream_t *streams,
                                     RgbPointers *dev_rgbs, unsigned char *host_rgb_in);
+    static void swapStreamMem(StreamInfo &per_stream_info, int nb_streams, RgbPointers *dev_rgbs);
     static void freeMemory(RgbPointers *dev_rgbs, ConvMatrixPointers &dev_convolution, Pointers &host, int nb_streams);
 public:
     static int execute(cv::Mat &img_in, cv::Mat &img_out, GpuUtilExecutionInfo &info);

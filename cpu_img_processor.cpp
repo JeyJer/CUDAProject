@@ -5,14 +5,13 @@ using namespace std;
 
 int main(int argc, char **argv)
 {
-    string img_out = "/mnt/data/tsky-19/eclipsec/CUDAProjectV2/out.jpg";
-    string img_in = "/mnt/data/tsky-19/eclipsec/CUDAProjectV2/in.jpg";
+    string img_out;  // default values in utilities.hpp
+    string img_in;
 
     CpuUtilMenuSelection menuSelection;
     CpuUtilMenuSelection::initParameters(img_in, img_out, menuSelection, argc, argv);
 
     CpuUtilExecutionInfo info;
-    ConvolutionMatrixProperties conv_properties;
 
     cv::Mat m_in = cv::imread(img_in, cv::IMREAD_UNCHANGED);
     auto rows = m_in.rows;
@@ -35,14 +34,10 @@ int main(int argc, char **argv)
         info.conv_matrix = conv_mat;
         info.nb_pass = menuSelection.nb_pass.at(i);
 
-        info.nb_pass = 20;
+        info.nb_pass = 10;  // DEBUG: pour les testes
         copyReverse(conv_mat, filter, conv_mat_length);
 
         CpuImgTransform::execute(m_in, m_out, info );
-        for(int kth_pass = 0; kth_pass < info.nb_pass; kth_pass++){
-            memcpy(m_in.data, m_out.data, 3 * rows * cols  * sizeof(unsigned char));
-            CpuImgTransform::execute(m_in, m_out, info );
-        }
     }
 
     cv::imwrite(img_out, m_out);

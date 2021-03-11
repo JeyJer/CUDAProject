@@ -7,6 +7,7 @@ StreamInfo::StreamInfo(double size, long rows): size(size), rows(rows){
 StreamInfo::StreamInfo(const StreamInfo &streams_info, int nb_streams, long cols, ConvolutionMatrixProperties &conv_prop){
     if( nb_streams == 1){
         size_bytes = streams_info.size_bytes;
+        size_block = streams_info.size;
         size = streams_info.size;
         rows = streams_info.rows;
         size_block = size;
@@ -95,6 +96,15 @@ void GpuImgTransformStream::initStreamAndDevMem(StreamInfo &per_stream_info, int
                          cudaMemcpyHostToDevice, streams[ i ] );
     }
 }
+void GpuImgTransformStream::swapStreamMem(StreamInfo &per_stream_info, int nb_streams, RgbPointers *dev_rgbs){
+    for( int i = 0 ; i < nb_streams; ++i )  swapPointers(&dev_rgbs[i].in, &dev_rgbs[i].out);
+
+    long size_copy_bytes = (long)(per_stream_info.size - per_stream_info.size_block) * (long)sizeof(unsigned char);
+    for(int i = 0; i < nb_streams - 1; ++i)
+        cudaMemcpyAsync(dev_rgbs[i].in + (long)per_stream_info.size_block, dev_rgbs[i+1].in,
+                        size_copy_bytes, cudaMemcpyDeviceToDevice);
+
+}
 void GpuImgTransformStream::freeMemory(RgbPointers *dev_rgbs, ConvMatrixPointers &dev_convolution, Pointers &host, int nb_streams){
     for( int i = 0 ; i < nb_streams; ++i ){
         cudaFree(dev_rgbs[i].in);
@@ -159,10 +169,20 @@ int GpuImgTransformStream::execute(cv::Mat &m_in, cv::Mat &m_out, GpuUtilExecuti
                 cols, per_stream_info.rows , dev_convolution.matrix, dev_convolution.prop);
     }
 
+
+    for( int kth_pass = 1; kth_pass < info.nb_pass; kth_pass++){
+        GpuImgTransformStream::swapStreamMem(per_stream_info, info.nb_streams, dev_rgbs);
+        for( i = 0 ; i < info.nb_streams ; ++i )
+        {
+            transform_img_stream<<< grid0, info.block, 3 * info.block.x * info.block.y, streams[ i ] >>>(
+                    dev_rgbs[i].in, dev_rgbs[i].out,
+                    cols, per_stream_info.rows , dev_convolution.matrix, dev_convolution.prop);
+        }
+    }
+
     cudaDeviceSynchronize();
     cudaEventRecord(stop);
 
-    // unsigned char *host_rgb_aux = m_out.data;
     for(  i = 0 ; i < info.nb_streams ; ++i )
     {
         unsigned char *desti = m_out.data + (long)(i * (long)per_stream_info.size_block);

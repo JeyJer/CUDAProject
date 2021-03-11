@@ -219,6 +219,13 @@ int GpuImgTransform::executeSharedMemMode(cv::Mat &m_in, cv::Mat &m_out, GpuUtil
     transform_img_shared<<<grid0, info.block, 3 * info.block.x * info.block.y>>>(dev.rgb.in, dev.rgb.out, cols, rows,
             dev.convolution.matrix, dev.convolution.prop);
 
+    for( int kth_pass = 1; kth_pass < info.nb_pass; kth_pass++){
+        swapPointers(&dev.rgb.in, &dev.rgb.out);
+        transform_img_shared<<<grid0, info.block, 3 * info.block.x * info.block.y>>>(dev.rgb.in, dev.rgb.out, cols, rows,
+                dev.convolution.matrix, dev.convolution.prop);
+
+    }
+
     cudaDeviceSynchronize();
     cudaEventRecord(stop);
 

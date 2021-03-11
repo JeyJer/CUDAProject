@@ -9,8 +9,8 @@
 
 int main(int argc, char **argv)
 {
-    std::string img_out = "/mnt/data/tsky-19/eclipsec/CUDAProjectV2/out.jpg";
-    std::string img_in = "/mnt/data/tsky-19/eclipsec/CUDAProjectV2/in.jpg";
+    std::string img_out;  // default values in utilities.hpp
+    std::string img_in;
 
     GpuUtilMenuSelection menuSelection;
     GpuUtilMenuSelection::initParameters(img_in, img_out, menuSelection, argc, argv);
@@ -19,17 +19,13 @@ int main(int argc, char **argv)
 
     cv::Mat m_in = cv::imread(img_in, cv::IMREAD_UNCHANGED);
 
-    //std::vector< unsigned char > g( rows * cols );
-    // Allocation de l'image de sortie en RAM côté CPU.
-    auto rows = m_in.rows;
-    auto cols = m_in.cols;
     unsigned char* rgb_in_aux = nullptr;
     cudaMallocHost(&rgb_in_aux, 3 * m_in.rows * m_in.cols);
     cv::Mat m_out(m_in.rows, m_in.cols, CV_8UC3, rgb_in_aux);
 
     int (*fnc_exec) (cv::Mat&, cv::Mat&, GpuUtilExecutionInfo& );
 
-    menuSelection.nb_stream = 60;
+    menuSelection.nb_stream = 60;   // DEBUG: pour les testes
     if( menuSelection.nb_stream == 0) {
         if (!menuSelection.use_shared)
             fnc_exec = GpuImgTransform::execute;
@@ -56,13 +52,9 @@ int main(int argc, char **argv)
 
         copyReverse(conv_mat, filter, conv_mat_length);
 
-        info.nb_pass = 20;
+        info.nb_pass = 20;  // DEBUG: pour les testes
         (*fnc_exec)(m_in, m_out, info );
 
-        for(int kth_pass = 0; kth_pass < info.nb_pass; kth_pass++){
-            memcpy(m_in.data, m_out.data, 3 * rows * cols  * sizeof(unsigned char));
-            (*fnc_exec)(m_in, m_out, info );
-        }
     }
 
     cv::imwrite(img_out, m_out);
