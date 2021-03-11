@@ -1,8 +1,8 @@
 #ifndef PROJET_CUDA_UTILITIES_H
 #define PROJET_CUDA_UTILITIES_H
 
-#define IMG_IN_PATH "/mnt/data/tsky-19/eclipsec/CUDAProjectV2/in.jpg"
-#define IMG_OUT_PATH "/mnt/data/tsky-19/eclipsec/CUDAProjectV2/out.jpg"
+#define IMG_IN_PATH "in.jpg"
+#define IMG_OUT_PATH "out.jpg"
 
 #define DEFAULT_DIMX 32
 #define DEFAULT_DIMY 4

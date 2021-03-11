@@ -25,7 +25,6 @@ int main(int argc, char **argv)
 
     int (*fnc_exec) (cv::Mat&, cv::Mat&, GpuUtilExecutionInfo& );
 
-    menuSelection.nb_stream = 60;   // DEBUG: pour les testes
     if( menuSelection.nb_stream == 0) {
         if (!menuSelection.use_shared)
             fnc_exec = GpuImgTransform::execute;
@@ -52,7 +51,6 @@ int main(int argc, char **argv)
 
         copyReverse(conv_mat, filter, conv_mat_length);
 
-        info.nb_pass = 20;  // DEBUG: pour les testes
         (*fnc_exec)(m_in, m_out, info );
 
     }

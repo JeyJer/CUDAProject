@@ -34,7 +34,6 @@ int main(int argc, char **argv)
         info.conv_matrix = conv_mat;
         info.nb_pass = menuSelection.nb_pass.at(i);
 
-        info.nb_pass = 10;  // DEBUG: pour les testes
         copyReverse(conv_mat, filter, conv_mat_length);
 
         CpuImgTransform::execute(m_in, m_out, info );

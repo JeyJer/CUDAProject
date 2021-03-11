@@ -167,10 +167,15 @@ int GpuImgTransform::execute(cv::Mat &m_in, cv::Mat &m_out, GpuUtilExecutionInfo
     transform_img<<< grid0, info.block >>>(dev.rgb.in, dev.rgb.out, cols, rows, dev.convolution.matrix,
             dev.convolution.prop);
 
+    for( int kth_pass = 1; kth_pass < info.nb_pass; kth_pass++){
+        swapPointers(&dev.rgb.in, &dev.rgb.out);
+        transform_img<<< grid0, info.block >>>(dev.rgb.in, dev.rgb.out, cols, rows, dev.convolution.matrix,
+                                               dev.convolution.prop);
+    }
+
     cudaDeviceSynchronize();
     cudaEventRecord(stop);
 
-    // unsigned char *host_rgb_aux = m_out.data;
     cudaMemcpy(m_out.data, dev.rgb.out, size, cudaMemcpyDeviceToHost);
 
     cudaEventSynchronize(stop);
@@ -185,7 +190,6 @@ int GpuImgTransform::execute(cv::Mat &m_in, cv::Mat &m_out, GpuUtilExecutionInfo
     freeMemory(dev, host);
     return 0;
 }
-
 
 int GpuImgTransform::executeSharedMemMode(cv::Mat &m_in, cv::Mat &m_out, GpuUtilExecutionInfo &info){
     auto rows = m_in.rows;
@@ -229,7 +233,6 @@ int GpuImgTransform::executeSharedMemMode(cv::Mat &m_in, cv::Mat &m_out, GpuUtil
     cudaDeviceSynchronize();
     cudaEventRecord(stop);
 
-    // unsigned char *host_rgb_aux = m_out.data;
     cudaMemcpy(m_out.data, dev.rgb.out, size, cudaMemcpyDeviceToHost);
 
     cudaEventSynchronize(stop);
