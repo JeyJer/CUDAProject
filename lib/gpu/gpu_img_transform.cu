@@ -6,18 +6,6 @@ __global__ void transform_img(unsigned char* input, unsigned char* output, std::
     long ith_col = blockIdx.x * blockDim.x + threadIdx.x;
     long jth_row = blockIdx.y * blockDim.y + threadIdx.y;
 
-    // TODO: supprimer debug msg
-    if( ith_col == 0 && jth_row == 0){
-        printf("size: %d; start_index: %d; divisor: %d\n;", conv_mat_properties->size, conv_mat_properties->start_index,
-               conv_mat_properties->divisor);
-
-        printf("{ %d", conv_mat[0]);
-        for( int i = 1; i < conv_mat_properties->size * conv_mat_properties->size; i++){
-            printf(", %d", conv_mat[i]);
-        }
-        printf(" }\n");
-    }
-
     if (ith_col + conv_mat_properties->start_index >= 0 && ith_col < nb_cols + conv_mat_properties->start_index &&
         jth_row + conv_mat_properties->start_index >= 0 && jth_row < nb_rows + conv_mat_properties->start_index)
     {
@@ -44,7 +32,7 @@ __global__ void transform_img(unsigned char* input, unsigned char* output, std::
     }
 }
 
-// TODO: a tester
+// TODO : debug
 __global__ void transform_img_shared(unsigned char* input, unsigned char* output,
                                      std::size_t nb_cols_global, std::size_t nb_rows_global,
                                      char * conv_mat, ConvolutionMatrixProperties *conv_prop)
@@ -57,18 +45,6 @@ __global__ void transform_img_shared(unsigned char* input, unsigned char* output
 
     long nb_rows = blockIdx.x;
     long nb_cols = blockIdx.y;
-
-    // TODO: supprimer debug msg
-    if( ith_col == 0 && jth_row == 0){
-        printf("size: %d; start_index: %d; divisor: %d\n;", conv_prop->size, conv_prop->start_index,
-               conv_prop->divisor);
-
-        printf("{ %d", conv_mat[0]);
-        for( int i = 1; i < conv_prop->size * conv_prop->size; i++){
-            printf(", %d", conv_mat[i]);
-        }
-        printf(" }\n");
-    }
 
     extern __shared__ unsigned char sh[];
 
@@ -133,8 +109,6 @@ void GpuImgTransform::freeMemory(Pointers &dev, Pointers &host){
     cudaFreeHost(host.rgb.in);
 }
 
-//static int execute(cv::Mat &img_in, cv::Mat &img_out, char *conv_mat, ConvolutionMatrixProperties &conv_mat_prop);
-// static int executeSharedMemMode(cv::Mat &img_in, cv::Mat &img_out, char *conv_mat, ConvolutionMatrixProperties &conv_mat_prop);
 int GpuImgTransform::execute(cv::Mat &m_in, cv::Mat &m_out, GpuUtilExecutionInfo &info)
 {
     auto rows = m_in.rows;

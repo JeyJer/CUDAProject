@@ -8,9 +8,8 @@
 
 
 struct StreamInfo {
-    long size_bytes;
     double size;
-    double size_block;
+    double size_effective;
     long rows;
     StreamInfo(const StreamInfo &streams_info, int nb_streams, long cols, ConvolutionMatrixProperties &conv_prop);
     StreamInfo(double size, long rows);
