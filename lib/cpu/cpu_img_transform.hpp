@@ -6,8 +6,10 @@
 #define PROJET_CUDA_CPU_IMG_TRANSFORM_H
 
 #include <opencv2/opencv.hpp>
+#include <chrono>
 #include "cpu_utilities.hpp"
 
+typedef std::chrono::high_resolution_clock Clock;
 
 class CpuImgTransform {
 private:

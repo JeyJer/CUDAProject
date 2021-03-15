@@ -32,21 +32,20 @@ __global__ void transform_img(unsigned char* input, unsigned char* output, std::
     }
 }
 
-// TODO : debug
 __global__ void transform_img_shared(unsigned char* input, unsigned char* output,
                                      std::size_t nb_cols_global, std::size_t nb_rows_global,
                                      char * conv_mat, ConvolutionMatrixProperties *conv_prop)
 {
-    long ith_col_global = blockIdx.x * blockDim.x + threadIdx.x;
-    long jth_row_global = blockIdx.y * blockDim.y + threadIdx.y;
+    extern __shared__ unsigned char sh[];
+
+    long ith_col_global = blockIdx.x * (blockDim.x + conv_prop->start_index - 1) + threadIdx.x;
+    long jth_row_global = blockIdx.y * (blockDim.y + conv_prop->start_index - 1) + threadIdx.y;
 
     long ith_col = threadIdx.x;
     long jth_row = threadIdx.y;
 
-    long nb_rows = blockIdx.x;
-    long nb_cols = blockIdx.y;
-
-    extern __shared__ unsigned char sh[];
+    long nb_rows = blockDim.y;
+    long nb_cols = blockDim.x;
 
     if (ith_col_global < nb_cols_global && jth_row_global < nb_rows_global)
     {
@@ -82,7 +81,7 @@ __global__ void transform_img_shared(unsigned char* input, unsigned char* output
                 index += 3;
             }
         }
-        for( long i = 0, j = 3 * (jth_row_global * nb_cols_global + ith_col_global); i < 3; i++, j++)
+        for( long i = 0, j = 3 * (jth_row_global * (long)nb_cols_global + ith_col_global); i < 3; i++, j++)
             output[j] = rgb[i] / conv_prop->divisor;
     }
 }
@@ -125,9 +124,6 @@ int GpuImgTransform::execute(cv::Mat &m_in, cv::Mat &m_out, GpuUtilExecutionInfo
 
     initMemory(m_in, dev, host, size, conv_mat_length);
 
-    host.convolution.prop = &info.conv_properties;
-    host.convolution.matrix = info.conv_matrix;
-
     cudaEvent_t start, stop;
 
     cudaEventCreate(&start);
@@ -156,7 +152,7 @@ int GpuImgTransform::execute(cv::Mat &m_in, cv::Mat &m_out, GpuUtilExecutionInfo
 
     float duration;
     cudaEventElapsedTime(&duration, start, stop);
-    std::cout << "time=" << duration << std::endl;
+    std::cout << "time=" << duration << " ms" << std::endl;
 
     cudaEventDestroy(start);
     cudaEventDestroy(stop);
@@ -179,9 +175,6 @@ int GpuImgTransform::executeSharedMemMode(cv::Mat &m_in, cv::Mat &m_out, GpuUtil
     int conv_mat_length = info.conv_properties.size * info.conv_properties.size;
 
     initMemory(m_in, dev, host, size, conv_mat_length);
-
-    host.convolution.prop = &info.conv_properties;
-    host.convolution.matrix = info.conv_matrix;
 
     cudaEvent_t start, stop;
 
@@ -213,7 +206,7 @@ int GpuImgTransform::executeSharedMemMode(cv::Mat &m_in, cv::Mat &m_out, GpuUtil
 
     float duration;
     cudaEventElapsedTime(&duration, start, stop);
-    std::cout << "time=" << duration << std::endl;
+    std::cout << "time=" << duration << " ms" << std::endl;
 
     cudaEventDestroy(start);
     cudaEventDestroy(stop);

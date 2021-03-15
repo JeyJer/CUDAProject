@@ -44,7 +44,7 @@ set_target_properties(
         PROPERTIES
         CUDA_SEPARABLE_COMPILATION ON)
 
-add_executable(std_img_processor
+add_executable(cpu_img_processor
         cpu_img_processor.cpp
         lib/cpu/cpu_img_transform.hpp
         lib/cpu/cpu_img_transform.cpp
@@ -54,4 +54,4 @@ add_executable(std_img_processor
         lib/cpu/cpu_utilities.cpp
         )
 
-target_link_libraries(std_img_processor ${OpenCV_LIBS})
+target_link_libraries(cpu_img_processor ${OpenCV_LIBS})

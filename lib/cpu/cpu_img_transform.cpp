@@ -64,6 +64,7 @@ int CpuImgTransform::execute(cv::Mat &m_in, cv::Mat &m_out, CpuUtilExecutionInfo
     host.convolution.matrix = info.conv_matrix;
 
     // start timer
+    auto start_timer = std::chrono::high_resolution_clock::now();
 
     transform_img(host.rgb.in, host.rgb.out, cols, rows , host.convolution.matrix, *host.convolution.prop);
 
@@ -71,8 +72,12 @@ int CpuImgTransform::execute(cv::Mat &m_in, cv::Mat &m_out, CpuUtilExecutionInfo
         swapPointers(&host.rgb.in, &host.rgb.out);
         transform_img(host.rgb.in, host.rgb.out, cols, rows , host.convolution.matrix, *host.convolution.prop);
     }
+
+    auto stop_timer = std::chrono::high_resolution_clock::now();
+
+    float duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop_timer - start_timer).count();
     // stop timer
-    // std::cout << "time=" << duration << std::endl;
+    std::cout << "time=" << duration << " ms" << std::endl;
 
     memcpy(m_out.data, host.rgb.out, size * sizeof(unsigned char));
 
