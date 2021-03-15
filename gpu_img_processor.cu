@@ -30,8 +30,8 @@ int main(int argc, char **argv)
 
     int (*fnc_exec) (cv::Mat&, cv::Mat&, GpuUtilExecutionInfo& );
 
-    menuSelection.use_shared = true;
-    menuSelection.nb_stream = 4;
+    // menuSelection.use_shared = true;
+    // menuSelection.nb_stream = 4;
     if( menuSelection.nb_stream == 0) {
         if (!menuSelection.use_shared)
             fnc_exec = GpuImgTransform::execute;

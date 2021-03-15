@@ -133,11 +133,17 @@ void GpuImgTransformStream::initStreamAndDevMem(StreamInfo &per_stream_info, int
         cudaMalloc(&dev_rgbs[i].out, size_bytes);
     }
 
-    for( int i = 0 ; i < nb_streams; i++ ){
+    long i = 0;
+    for( ; i < nb_streams - 1; i++ ){
         cudaMemcpyAsync( dev_rgbs[i].in,host_rgb_in + (int)(i * per_stream_info.size_effective),
                          size_bytes,
                          cudaMemcpyHostToDevice, streams[i] );
     }
+
+    size_bytes = (long)per_stream_info.size_effective * (long)sizeof(unsigned char);
+    cudaMemcpyAsync( dev_rgbs[i].in,host_rgb_in + (int)(i * per_stream_info.size_effective),
+                     size_bytes,
+                     cudaMemcpyHostToDevice, streams[i] );
 }
 void GpuImgTransformStream::swapStreamMem(StreamInfo &per_stream_info, int nb_streams, RgbPointers *dev_rgbs){
     for( int i = 0 ; i < nb_streams; i++ )  swapPointers(&dev_rgbs[i].in, &dev_rgbs[i].out);
@@ -145,10 +151,6 @@ void GpuImgTransformStream::swapStreamMem(StreamInfo &per_stream_info, int nb_st
     long size_copy_bytes = (long)(per_stream_info.size - per_stream_info.size_effective) * (long)sizeof(unsigned char);
 
     for( long i = 0; i < nb_streams - 1; i++){
-        /*
-        cudaMemcpyAsync(dev_rgbs[i].in + (long)per_stream_info.size_effective, dev_rgbs[i+1].in,
-                        size_copy_bytes, cudaMemcpyDeviceToDevice);
-        */
         cudaMemcpyAsync(dev_rgbs[i].in + (long)per_stream_info.size_effective, dev_rgbs[i+1].in,
                         size_copy_bytes, cudaMemcpyDeviceToDevice);
     }
@@ -254,7 +256,6 @@ int GpuImgTransformStream::execute(cv::Mat &m_in, cv::Mat &m_out, GpuUtilExecuti
     return 0;
 }
 
-// TODO : debug [block image de dessous semble manquer <<Le dernier stream semble ne rien ecrire>> ]
 int GpuImgTransformStream::executeSharedMemMode(cv::Mat &m_in, cv::Mat &m_out, GpuUtilExecutionInfo &info)
 {
     auto rows = m_in.rows;
@@ -283,7 +284,7 @@ int GpuImgTransformStream::executeSharedMemMode(cv::Mat &m_in, cv::Mat &m_out, G
     GpuImgTransformStream::initMemory(m_in, dev_convolution, host, i,  conv_mat_length);
 
 
-    for( i = 0 ; i < info.nb_streams ; ++i ) cudaStreamCreate( &streams[ i ] );
+    for( i = 0 ; i < info.nb_streams ; i++ ) cudaStreamCreate( &streams[i] );
 
     GpuImgTransformStream::initStreamAndDevMem(per_stream_info, info.nb_streams, streams, dev_rgbs, host.rgb.in);
 
@@ -299,7 +300,7 @@ int GpuImgTransformStream::executeSharedMemMode(cv::Mat &m_in, cv::Mat &m_out, G
                (rows - 1) / (info.block.y - 1 + info.conv_properties.start_index) + 1);
 
 
-    for( i = 0 ; i < info.nb_streams ; ++i )
+    for( i = 0 ; i < info.nb_streams ; i++ )
     {
         transform_img_stream_shared<<< grid0, info.block, 3 * info.block.x * info.block.y, streams[i]>>>(
                 dev_rgbs[i].in, dev_rgbs[i].out,
@@ -320,17 +321,17 @@ int GpuImgTransformStream::executeSharedMemMode(cv::Mat &m_in, cv::Mat &m_out, G
     cudaDeviceSynchronize();
     cudaEventRecord(stop);
 
-    for(  i = 0 ; i < info.nb_streams ; ++i )
+    for(  i = 0 ; i < info.nb_streams ; i++ )
     {
         unsigned char *desti = m_out.data + (long)(i * (long)per_stream_info.size_effective);
 
         cudaMemcpyAsync( desti, dev_rgbs[i].out,(long)per_stream_info.size_effective * sizeof(unsigned char),
-                         cudaMemcpyDeviceToHost, streams[ i ] );
+                         cudaMemcpyDeviceToHost, streams[i] );
     }
 
     cudaEventSynchronize(stop);
 
-    for( i = 0 ; i < info.nb_streams ; ++i ) cudaStreamDestroy( streams[ i ] );
+    for( i = 0 ; i < info.nb_streams ; i++ ) cudaStreamDestroy( streams[ i ] );
 
     float duration;
     cudaEventElapsedTime(&duration, start, stop);
