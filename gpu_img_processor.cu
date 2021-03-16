@@ -38,9 +38,7 @@ int main(int argc, char **argv)
         else
             fnc_exec = GpuImgTransform::executeSharedMemMode;
     }else {
-        if( menuSelection.nb_stream > m_in.rows ) menuSelection.nb_stream = m_in.rows;
-
-        while(m_in.rows % menuSelection.nb_stream != 0) menuSelection.nb_stream--;
+        if( menuSelection.nb_stream > m_in.rows ) menuSelection.nb_stream = 1;
 
         if (!menuSelection.use_shared)
             fnc_exec = GpuImgTransformStream::execute;
