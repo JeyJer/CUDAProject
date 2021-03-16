@@ -1,7 +1,8 @@
 #include "gpu_img_transform.cuh"
 
-__global__ void transform_img(unsigned char* input, unsigned char* output, std::size_t nb_cols, std::size_t nb_rows,
-                              char * conv_mat, ConvolutionMatrixProperties *conv_mat_properties)
+__global__ void transform_img(const unsigned char *input, unsigned char* output,
+        std::size_t nb_cols, std::size_t nb_rows,
+        const char *conv_mat, ConvolutionMatrixProperties *conv_mat_properties)
 {
     long ith_col = blockIdx.x * blockDim.x + threadIdx.x;
     long jth_row = blockIdx.y * blockDim.y + threadIdx.y;
@@ -32,9 +33,9 @@ __global__ void transform_img(unsigned char* input, unsigned char* output, std::
     }
 }
 
-__global__ void transform_img_shared(unsigned char* input, unsigned char* output,
+__global__ void transform_img_shared(const unsigned char *input, unsigned char* output,
                                      std::size_t nb_cols_global, std::size_t nb_rows_global,
-                                     char * conv_mat, ConvolutionMatrixProperties *conv_prop)
+                                     const char *conv_mat, ConvolutionMatrixProperties *conv_prop)
 {
     extern __shared__ unsigned char sh[];
 
