@@ -1,0 +1,8 @@
+/cmake-build-debug/
+/build/CMakeFiles/
+/build/cmake_install.cmake
+/build/CMakeCache.txt
+/build/img_processor
+/build/gpu_img_processor
+/build/cpu_img_processor
+/build/Makefile
