@@ -1,0 +1,150 @@
+
+[1m• Files path :[0m
+[1;4mIn path :[0m in.jpg
+[1;4mOut path :[0m out.jpg
+
+[1m• CUDA Options :[0m
+[1;4mBlock dim X :[0m 256
+[1;4mBlock dim Y :[0m 64
+[1;4mMemory Shared enabled ?[0m No
+[1;4mStreams enabled :[0m 2
+
+[1m• Image filters :[0m
+[1;4memboss :[0m 10-pass.
+
+time=0.0424 ms
+
+[1m• Files path :[0m
+[1;4mIn path :[0m in.jpg
+[1;4mOut path :[0m out.jpg
+
+[1m• CUDA Options :[0m
+[1;4mBlock dim X :[0m 256
+[1;4mBlock dim Y :[0m 64
+[1;4mMemory Shared enabled ?[0m No
+[1;4mStreams enabled :[0m 2
+
+[1m• Image filters :[0m
+[1;4memboss :[0m 10-pass.
+
+time=0.042144 ms
+
+[1m• Files path :[0m
+[1;4mIn path :[0m in.jpg
+[1;4mOut path :[0m out.jpg
+
+[1m• CUDA Options :[0m
+[1;4mBlock dim X :[0m 256
+[1;4mBlock dim Y :[0m 64
+[1;4mMemory Shared enabled ?[0m No
+[1;4mStreams enabled :[0m 2
+
+[1m• Image filters :[0m
+[1;4memboss :[0m 10-pass.
+
+time=0.0464 ms
+
+[1m• Files path :[0m
+[1;4mIn path :[0m in.jpg
+[1;4mOut path :[0m out.jpg
+
+[1m• CUDA Options :[0m
+[1;4mBlock dim X :[0m 256
+[1;4mBlock dim Y :[0m 64
+[1;4mMemory Shared enabled ?[0m No
+[1;4mStreams enabled :[0m 2
+
+[1m• Image filters :[0m
+[1;4memboss :[0m 10-pass.
+
+time=0.043904 ms
+
+[1m• Files path :[0m
+[1;4mIn path :[0m in.jpg
+[1;4mOut path :[0m out.jpg
+
+[1m• CUDA Options :[0m
+[1;4mBlock dim X :[0m 256
+[1;4mBlock dim Y :[0m 64
+[1;4mMemory Shared enabled ?[0m No
+[1;4mStreams enabled :[0m 2
+
+[1m• Image filters :[0m
+[1;4memboss :[0m 10-pass.
+
+time=0.041792 ms
+
+[1m• Files path :[0m
+[1;4mIn path :[0m in.jpg
+[1;4mOut path :[0m out.jpg
+
+[1m• CUDA Options :[0m
+[1;4mBlock dim X :[0m 256
+[1;4mBlock dim Y :[0m 64
+[1;4mMemory Shared enabled ?[0m No
+[1;4mStreams enabled :[0m 2
+
+[1m• Image filters :[0m
+[1;4memboss :[0m 10-pass.
+
+time=0.042336 ms
+
+[1m• Files path :[0m
+[1;4mIn path :[0m in.jpg
+[1;4mOut path :[0m out.jpg
+
+[1m• CUDA Options :[0m
+[1;4mBlock dim X :[0m 256
+[1;4mBlock dim Y :[0m 64
+[1;4mMemory Shared enabled ?[0m No
+[1;4mStreams enabled :[0m 2
+
+[1m• Image filters :[0m
+[1;4memboss :[0m 10-pass.
+
+time=0.041472 ms
+
+[1m• Files path :[0m
+[1;4mIn path :[0m in.jpg
+[1;4mOut path :[0m out.jpg
+
+[1m• CUDA Options :[0m
+[1;4mBlock dim X :[0m 256
+[1;4mBlock dim Y :[0m 64
+[1;4mMemory Shared enabled ?[0m No
+[1;4mStreams enabled :[0m 2
+
+[1m• Image filters :[0m
+[1;4memboss :[0m 10-pass.
+
+time=0.039264 ms
+
+[1m• Files path :[0m
+[1;4mIn path :[0m in.jpg
+[1;4mOut path :[0m out.jpg
+
+[1m• CUDA Options :[0m
+[1;4mBlock dim X :[0m 256
+[1;4mBlock dim Y :[0m 64
+[1;4mMemory Shared enabled ?[0m No
+[1;4mStreams enabled :[0m 2
+
+[1m• Image filters :[0m
+[1;4memboss :[0m 10-pass.
+
+time=0.040032 ms
+
+[1m• Files path :[0m
+[1;4mIn path :[0m in.jpg
+[1;4mOut path :[0m out.jpg
+
+[1m• CUDA Options :[0m
+[1;4mBlock dim X :[0m 256
+[1;4mBlock dim Y :[0m 64
+[1;4mMemory Shared enabled ?[0m No
+[1;4mStreams enabled :[0m 2
+
+[1m• Image filters :[0m
+[1;4memboss :[0m 10-pass.
+
+time=0.039072 ms
