@@ -24,7 +24,7 @@ void set_convolution_properties(ConvolutionMatrixProperties &mat_def_properties,
             break;
         case SHARPEN:
             mat_def_properties.size = 3;
-            mat_def_properties.divisor = -17;
+            mat_def_properties.divisor = 1;
             break;
         default:
             mat_def_properties.size = 3;
