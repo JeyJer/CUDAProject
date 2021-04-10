@@ -37,32 +37,32 @@ struct Pointers {
 };
 
 static char ARR_BOXBLUR[3*3] = { 1, 1, 1,
-                              1, 1, 1,
-                              1, 1, 1
+                                 1, 1, 1,
+                                 1, 1, 1
 };
 static char ARR_GAUSSIANBLUR[3*3] = {  1, 2, 1,
-                                    2, 4, 2,
-                                    1, 2, 1
+                                       2, 4, 2,
+                                       1, 2, 1
 };
-static char ARR_GAUSSIANBLUR5[5*5] = { 1, 4, 6, 4, 1,
-                                    4, 16, 24, 16, 4,
-                                    6, 24, 36, 24, 6,
-                                    4, 16, 24, 16, 4,
-                                    1, 4, 6, 4, 1
+static char ARR_GAUSSIANBLUR5[5*5] = { 1,  4,  6,  4, 1,
+                                       4, 16, 24, 16, 4,
+                                       6, 24, 36, 24, 6,
+                                       4, 16, 24, 16, 4,
+                                       1,  4,  6,  4, 1
 };
 static char ARR_EMBOSS[3*3] = { -2, -1, 0,
-                             -1, 1, 1,
-                             0, 1, 2
+                                -1, 1, 1,
+                                 0, 1, 2
 };
 static char ARR_EMBOSS5[5*5] = { 1, 0, 0, 0, 0,
-                              0, 1, 0, 0, 0,
-                              0, 0, 0, 0, 0,
-                              0, 0, 0, -1, 0,
-                              0, 0, 0, 0, -1
+                                 0, 1, 0, 0, 0,
+                                 0, 0, 0, 0, 0,
+                                 0, 0, 0, -1, 0,
+                                 0, 0, 0, 0, -1
 };
-static char ARR_SHARPEN[3*3] = { 0, -5, 0,
-                              -5, 3, -5,
-                              0, -5, 0
+static char ARR_SHARPEN[3*3] = { 0, -1,  0,
+                                -1,  5, -1,
+                                 0, -1,  0
 };
 
 void printParameters( std::string txtBold, std::string txtNormal, bool isTxtBoldUnderlined );
