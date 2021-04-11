@@ -31,5 +31,4 @@
 - sharpen
 
 **pass** : how many times the filter will be applied.  
-  
 *Note : The parameter \[filter pass] can be repeated how many times you want to.*
