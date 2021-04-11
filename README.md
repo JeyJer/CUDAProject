@@ -29,5 +29,6 @@ filter :
 - emboss
 - emboss5
 - sharpen
+
 pass : how many times the filter have to be applied.  
 The parameter \[filter pass] can be repeated how many times you want to.
