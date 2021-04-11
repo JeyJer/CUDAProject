@@ -30,6 +30,6 @@
 - emboss5
 - sharpen
 
-**pass** : how many times the filter have to be applied.  
+**pass** : how many times the filter will be applied.  
   
-**Note :** The parameter \[filter pass] can be repeated how many times you want to.
+*Note : The parameter \[filter pass] can be repeated how many times you want to.*
