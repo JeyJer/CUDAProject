@@ -12,7 +12,9 @@ Compilation :
 3. $ make
   
 Execution :  
-gpu_img_processor \[in_path] \[out_path] \[dimX] \[dimY] \[useSharedMemory] \[useNumberStream] \[filter pass]  
+gpu_img_processor \[in_path="in.jpg"] \[out_path="out.jpg"] \[dimX=32] \[dimY=32] \[useSharedMemory=0] \[useNumberStream=0] \[filter="boxblur" pass=1]  
+
+\[parameter_name=default_value]
   
 in_path : /path/to/image/in  
 out_path : /path/to/image/out  
