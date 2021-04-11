@@ -5,7 +5,7 @@
 #define IMG_OUT_PATH "out.jpg"
 
 #define DEFAULT_DIMX 32
-#define DEFAULT_DIMY 4
+#define DEFAULT_DIMY 32
 
 #include <string>
 #include <iostream>
