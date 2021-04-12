@@ -1,150 +1,100 @@
-
-[1m• Files path :[0m
-[1;4mIn path :[0m in.jpg
-[1;4mOut path :[0m out.jpg
-
-[1m• CUDA Options :[0m
-[1;4mBlock dim X :[0m 128
-[1;4mBlock dim Y :[0m 576
-[1;4mMemory Shared enabled ?[0m No
-[1;4mStreams enabled :[0m 2
-
-[1m• Image filters :[0m
-[1;4memboss :[0m 10-pass.
-
-time=0.042048 ms
-
-[1m• Files path :[0m
-[1;4mIn path :[0m in.jpg
-[1;4mOut path :[0m out.jpg
-
-[1m• CUDA Options :[0m
-[1;4mBlock dim X :[0m 128
-[1;4mBlock dim Y :[0m 576
-[1;4mMemory Shared enabled ?[0m No
-[1;4mStreams enabled :[0m 2
-
-[1m• Image filters :[0m
-[1;4memboss :[0m 10-pass.
-
-time=0.039872 ms
-
-[1m• Files path :[0m
-[1;4mIn path :[0m in.jpg
-[1;4mOut path :[0m out.jpg
-
-[1m• CUDA Options :[0m
-[1;4mBlock dim X :[0m 128
-[1;4mBlock dim Y :[0m 576
-[1;4mMemory Shared enabled ?[0m No
-[1;4mStreams enabled :[0m 2
-
-[1m• Image filters :[0m
-[1;4memboss :[0m 10-pass.
-
-time=0.039328 ms
-
-[1m• Files path :[0m
-[1;4mIn path :[0m in.jpg
-[1;4mOut path :[0m out.jpg
-
-[1m• CUDA Options :[0m
-[1;4mBlock dim X :[0m 128
-[1;4mBlock dim Y :[0m 576
-[1;4mMemory Shared enabled ?[0m No
-[1;4mStreams enabled :[0m 2
-
-[1m• Image filters :[0m
-[1;4memboss :[0m 10-pass.
-
-time=0.041632 ms
-
-[1m• Files path :[0m
-[1;4mIn path :[0m in.jpg
-[1;4mOut path :[0m out.jpg
-
-[1m• CUDA Options :[0m
-[1;4mBlock dim X :[0m 128
-[1;4mBlock dim Y :[0m 576
-[1;4mMemory Shared enabled ?[0m No
-[1;4mStreams enabled :[0m 2
-
-[1m• Image filters :[0m
-[1;4memboss :[0m 10-pass.
-
-time=0.040128 ms
-
-[1m• Files path :[0m
-[1;4mIn path :[0m in.jpg
-[1;4mOut path :[0m out.jpg
-
-[1m• CUDA Options :[0m
-[1;4mBlock dim X :[0m 128
-[1;4mBlock dim Y :[0m 576
-[1;4mMemory Shared enabled ?[0m No
-[1;4mStreams enabled :[0m 2
-
-[1m• Image filters :[0m
-[1;4memboss :[0m 10-pass.
-
-time=0.041664 ms
-
-[1m• Files path :[0m
-[1;4mIn path :[0m in.jpg
-[1;4mOut path :[0m out.jpg
-
-[1m• CUDA Options :[0m
-[1;4mBlock dim X :[0m 128
-[1;4mBlock dim Y :[0m 576
-[1;4mMemory Shared enabled ?[0m No
-[1;4mStreams enabled :[0m 2
-
-[1m• Image filters :[0m
-[1;4memboss :[0m 10-pass.
-
-time=0.046272 ms
-
-[1m• Files path :[0m
-[1;4mIn path :[0m in.jpg
-[1;4mOut path :[0m out.jpg
-
-[1m• CUDA Options :[0m
-[1;4mBlock dim X :[0m 128
-[1;4mBlock dim Y :[0m 576
-[1;4mMemory Shared enabled ?[0m No
-[1;4mStreams enabled :[0m 2
-
-[1m• Image filters :[0m
-[1;4memboss :[0m 10-pass.
-
-time=0.039232 ms
-
-[1m• Files path :[0m
-[1;4mIn path :[0m in.jpg
-[1;4mOut path :[0m out.jpg
-
-[1m• CUDA Options :[0m
-[1;4mBlock dim X :[0m 128
-[1;4mBlock dim Y :[0m 576
-[1;4mMemory Shared enabled ?[0m No
-[1;4mStreams enabled :[0m 2
-
-[1m• Image filters :[0m
-[1;4memboss :[0m 10-pass.
-
-time=0.04544 ms
-
-[1m• Files path :[0m
-[1;4mIn path :[0m in.jpg
-[1;4mOut path :[0m out.jpg
-
-[1m• CUDA Options :[0m
-[1;4mBlock dim X :[0m 128
-[1;4mBlock dim Y :[0m 576
-[1;4mMemory Shared enabled ?[0m No
-[1;4mStreams enabled :[0m 2
-
-[1m• Image filters :[0m
-[1;4memboss :[0m 10-pass.
-
-time=0.039552 ms
+time=0.007552 ms
+time=0.00736 ms
+time=0.007264 ms
+time=0.00736 ms
+time=0.007424 ms
+time=0.007072 ms
+time=0.007424 ms
+time=0.007296 ms
+time=0.00752 ms
+time=0.0072 ms
+time=0.007744 ms
+time=0.006848 ms
+time=0.007008 ms
+time=0.007424 ms
+time=0.007712 ms
+time=0.007936 ms
+time=0.00736 ms
+time=0.007648 ms
+time=0.007392 ms
+time=0.006944 ms
+time=0.006912 ms
+time=0.007392 ms
+time=0.007136 ms
+time=0.00736 ms
+time=0.00704 ms
+time=0.007168 ms
+time=0.007488 ms
+time=0.007328 ms
+time=0.007584 ms
+time=0.005824 ms
+time=0.007392 ms
+time=0.007168 ms
+time=0.00736 ms
+time=0.01888 ms
+time=0.007264 ms
+time=0.007008 ms
+time=0.0072 ms
+time=0.0072 ms
+time=0.007136 ms
+time=0.007232 ms
+time=0.00768 ms
+time=0.007104 ms
+time=0.00768 ms
+time=0.007552 ms
+time=0.007808 ms
+time=0.007264 ms
+time=0.007264 ms
+time=0.007136 ms
+time=0.007296 ms
+time=0.00768 ms
+time=0.008128 ms
+time=0.00736 ms
+time=0.007456 ms
+time=0.007296 ms
+time=0.007392 ms
+time=0.007392 ms
+time=0.007232 ms
+time=0.007296 ms
+time=0.007168 ms
+time=0.005728 ms
+time=0.007584 ms
+time=0.00736 ms
+time=0.006112 ms
+time=0.007232 ms
+time=0.007872 ms
+time=0.007392 ms
+time=0.007072 ms
+time=0.00688 ms
+time=0.00736 ms
+time=0.00736 ms
+time=0.007776 ms
+time=0.007264 ms
+time=0.007584 ms
+time=0.007424 ms
+time=0.007584 ms
+time=0.007232 ms
+time=0.007008 ms
+time=0.007232 ms
+time=0.00704 ms
+time=0.007776 ms
+time=0.007296 ms
+time=0.007392 ms
+time=0.0072 ms
+time=0.007616 ms
+time=0.007776 ms
+time=0.007168 ms
+time=0.006912 ms
+time=0.00752 ms
+time=0.007552 ms
+time=0.007264 ms
+time=0.007424 ms
+time=0.007456 ms
+time=0.007744 ms
+time=0.007712 ms
+time=0.007264 ms
+time=0.007264 ms
+time=0.007392 ms
+time=0.007232 ms
+time=0.007424 ms
+time=0.00736 ms
