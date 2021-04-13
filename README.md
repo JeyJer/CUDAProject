@@ -5,7 +5,9 @@
 - CAQUELARD Vincent
 - GBOHO Thierry
 - HEBRAS Jérôme
-
+  
+(See the manual inside the "Rapport" folder to get more information about Compilation & Execution)  
+  
 #### Compilation :
 1. $ cd build
 2. $ cmake ..
